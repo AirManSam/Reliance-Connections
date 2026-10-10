@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reliance Connections (RC) CRM</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased h-screen overflow-hidden">
+  <div id="app" class="h-full flex flex-col"></div>
+
+  <script>
+    // --- INITIAL STATE ---
+    const INITIAL_STATE = {
+      currentUser: null,
+      users: [
+        { id: 'u1', name: 'Marcus Vance', email: 'manager@reliance.com', password: 'admin123', role: 'manager' },
+        { id: 'u2', name: 'Sarah Jenkins', email: 'csr@reliance.com', password: 'csr123', role: 'csr' },
+        { id: 'u3', name: 'Dave Miller', email: 'dispatch@reliance.com', password: 'dispatch123', role: 'dispatcher' },
+        { id: 'u4', name: 'Jake Torres', email: 'tech@reliance.com', password: 'tech123', role: 'technician' }
+      ],
+      currentView: 'dashboard',
+      selectedCustomerId: null,
+      
+      technicians: [
+        { id: 't1', name: 'Jake Torres', trades: ['HVAC', 'Electrical'], phone: '555-0191', status: 'In Field' },
+        { id: 't2', name: 'Sam Reynolds', trades: ['Plumbing', 'Gates'], phone: '555-0192', status: 'Available' },
+        { id: 't3', name: 'Alex Rivera', trades: ['HVAC', 'Generators'], phone: '555-0193', status: 'Available' },
+        { id: 't4', name: 'Chris Evans', trades: ['Gates', 'Electrical'], phone: '555-0194', status: 'On Break' }
+      ],
+
+      // Shared Knowledge Base
+      knowledgeBase: [
+        { id: 'kb1', title: 'Trane Rooftop HVAC Service Manual', category: 'HVAC', fileType: 'PDF', url: '#', addedBy: 'Marcus Vance', date: '2024-01-10', notes: 'Includes refrigerant pressure curves & wiring diagrams.' },
+        { id: 'kb2', title: 'Generac Generator Diagnostic & Voltage Formulas', category: 'Generators', fileType: 'DOCX', url: '#', addedBy: 'Marcus Vance', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing formulas.' },
+        { id: 'kb3', title: 'LiftMaster Gate Barrier Loop Wiring Guide', category: 'Gates', fileType: 'PDF', url: '#', addedBy: 'Marcus Vance', date: '2024-02-01', notes: 'Diagram for induction loop detectors and access control keypads.' }
+      ],
+
+      // Company Price Book
+      priceBook: [
+        { id: 'pb1', code: 'HVAC-PM', title: 'HVAC Semi-Annual Tune-Up', category: 'HVAC', unitPrice: 150.00, description: 'Filter replacement, coil inspection, and refrigerant check.' },
+        { id: 'pb2', code: 'GEN-DIAG', title: 'Generator Load Test & Diagnostic', category: 'Generators', unitPrice: 220.00, description: 'Full system diagnostic run and transfer switch inspection.' },
+        { id: 'pb3', code: 'PLM-FLUSH', title: 'Tankless Water Heater Descaling', category: 'Plumbing', unitPrice: 180.00, description: 'Flush system with descaling solution to remove hard water deposits.' },
+        { id: 'pb4', code: 'GATE-ROUT', title: 'Automatic Gate Arm Lubrication & Alignment', category: 'Gates', unitPrice: 125.00, description: 'Re-align gate tracks, check safety loops, and grease mechanical hinges.' },
+        { id: 'pb5', code: 'ELE-INSP', title: 'Commercial 200A Electrical Panel Inspection', category: 'Electrical', unitPrice: 200.00, description: 'Thermal camera check for hot breakers and ground fault verification.' }
+      ],
+
+      customers: [
+        {
+          id: 'c101',
+          name: 'Apex Commercial Plaza',
+          contactPerson: 'David Sterling',
+          phone: '(555) 234-5678',
+          email: 'dsterling@apexplaza.com',
+          address: '742 Evergreen Terrace, Suite 100',
+          type: 'Commercial',
+          created: '2023-01-15',
+          equipments: [
+            { id: 'eq1', name: 'Roof Rooftop HVAC - Unit 1', category: 'HVAC', brand: 'Trane', model: 'Voyager 10-Ton', serial: 'TRN-884920-X', installDate: '2021-04-12', lastService: '2023-09-10', nextMaintenance: '2024-03-10', notes: 'Filter size: 20x25x2.' },
+            { id: 'eq2', name: 'Main Emergency Backup Generator', category: 'Generators', brand: 'Generac', model: 'Protector 60kW', serial: 'GEN-99201-B', installDate: '2020-11-05', lastService: '2023-11-01', nextMaintenance: '2024-05-01', notes: 'Diesel unit. Monthly test runs.' }
+          ]
+        },
+        {
+          id: 'c102',
+          name: 'Eleanor Vance (Residential)',
+          contactPerson: 'Eleanor Vance',
+          phone: '(555) 876-5432',
+          email: 'eleanor.vance@gmail.com',
+          address: '1042 Birchwood Lane',
+          type: 'Residential',
+          created: '2023-05-20',
+          equipments: [
+            { id: 'eq4', name: 'Home Tankless Water Heater', category: 'Plumbing', brand: 'Rinnai', model: 'RU199iN Tankless', serial: 'RIN-554201', installDate: '2022-01-10', lastService: '2023-01-10', nextMaintenance: '2024-01-10', notes: 'Descaling required annually due to hard water.' }
+          ]
+        }
+      ],
+
+      csrSlots: [
+        { time: '08:00 AM - 10:00 AM', csr1: { booked: true, jobType: 'HVAC Routine', customer: 'Apex Commercial Plaza' }, csr2: { booked: false }, csr3: { booked: true, jobType: 'Generator Diagnostic', customer: 'Eleanor Vance' } },
+        { time: '10:00 AM - 12:00 PM', csr1: { booked: false }, csr2: { booked: true, jobType: 'Gate Opener Repair', customer: 'Summit Logistics' }, csr3: { booked: false } },
+        { time: '01:00 PM - 03:00 PM', csr1: { booked: true, jobType: 'Water Heater Flush', customer: 'Eleanor Vance' }, csr2: { booked: false }, csr3: { booked: false } },
+        { time: '03:00 PM - 05:00 PM', csr1: { booked: false }, csr2: { booked: false }, csr3: { booked: true, jobType: 'Electrical Panel Inspection', customer: 'Oakridge Apts' } }
+      ],
+
+      workOrders: [
+        {
+          id: 'WO-8821',
+          customerId: 'c101',
+          customerName: 'Apex Commercial Plaza',
+          equipmentName: 'Roof Rooftop HVAC - Unit 1',
+          trade: 'HVAC',
+          status: 'In Progress',
+          techId: 't1',
+          techName: 'Jake Torres',
+          createdDate: '2024-02-18',
+          description: 'Semi-annual preventative maintenance check.',
+          lineItems: [
+            { id: 'li1', title: 'HVAC Semi-Annual Tune-Up', qty: 1, unitPrice: 150.00, total: 150.00 },
+            { id: 'li2', title: 'Heavy Duty 20x25 Air Filters (3 Pack)', qty: 1, unitPrice: 85.00, total: 85.00 }
+          ],
+          workLogs: [
+            { id: 'wl1', timestamp: '2024-02-18 08:15 AM', user: 'Jake Torres', note: 'Arrived on site. Replaced filters and tested airflow.' }
+          ]
+        },
+        {
+          id: 'WO-8822',
+          customerId: 'c102',
+          customerName: 'Eleanor Vance',
+          equipmentName: 'Home Tankless Water Heater',
+          trade: 'Plumbing',
+          status: 'Unassigned',
+          techId: '',
+          techName: '',
+          createdDate: '2024-02-18',
+          description: 'Water heater flush & system diagnostic.',
+          lineItems: [
+            { id: 'li3', title: 'Tankless Water Heater Descaling', qty: 1, unitPrice: 180.00, total: 180.00 }
+          ],
+          workLogs: []
+        }
+      ],
+
+      customerChangeLogs: [
+        {
+          id: 'log-1',
+          timestamp: '2024-02-18 09:12 AM',
+          user: 'Sarah Jenkins (CSR)',
+          customerId: 'c101',
+          customerName: 'Apex Commercial Plaza',
+          action: 'Updated Phone Number',
+          details: 'Changed contact phone from (555) 000-0000 to (555) 234-5678.'
+        }
+      ]
+    };
+
+    function loadAppState() {
+      const saved = localStorage.getItem('reliance_crm_state_v3');
+      return saved ? JSON.parse(saved) : INITIAL_STATE;
+    }
+
+    function saveAppState() {
+      localStorage.setItem('reliance_crm_state_v3', JSON.stringify(appState));
+      renderApp();
+    }
+
+    let appState = loadAppState();
+
+    function addCustomerChangeLog(customerId, customerName, action, details) {
+      const newLog = {
+        id: 'log-' + Date.now(),
+        timestamp: new Date().toLocaleString(),
+        user: appState.currentUser ? `${appState.currentUser.name} (${appState.currentUser.role.toUpperCase()})` : 'System',
+        customerId,
+        customerName,
+        action,
+        details
+      };
+      appState.customerChangeLogs.unshift(newLog);
+    }
+
+    // --- MAIN RENDERER ---
+    function renderApp() {
+      const root = document.getElementById('app');
+      
+      if (!appState.currentUser) {
+        root.innerHTML = renderLoginScreen();
+        return;
+      }
+
+      root.innerHTML = `
+        <div class="flex h-screen bg-slate-900">
+          ${renderSidebar()}
+          <div class="flex-1 flex flex-col overflow-hidden">
+            ${renderHeader()}
+            <main class="flex-1 overflow-y-auto p-6 bg-slate-900/50 custom-scrollbar">
+              ${renderCurrentView()}
+            </main>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- LOGIN SCREEN ---
+    function renderLoginScreen() {
+      return `
+        <div class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-700"></div>
+            
+            <div class="text-center mb-8">
+              <div class="inline-flex items-center justify-center bg-slate-950 px-4 py-2 rounded-xl border border-red-600/30 mb-3 shadow-lg shadow-red-600/10">
+                <span class="font-extrabold text-2xl tracking-tight text-white">R</span>
+                <span class="font-extrabold text-2xl tracking-tight text-red-500 ml-0.5">C</span>
+              </div>
+              <h1 class="text-2xl font-bold text-white tracking-wide">RELIANCE CONNECTIONS</h1>
+              <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-semibold">Field Operations CRM</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Select Account</label>
+                <select id="loginUserSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-red-500 transition">
+                  ${appState.users.map(u => `<option value="${u.id}">${u.name} — (${u.role.toUpperCase()})</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Password</label>
+                <input type="password" value="password" id="loginPassword" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-red-500 transition" required />
+              </div>
+
+              <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-red-600/20 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In to CRM
+              </button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const userId = document.getElementById('loginUserSelect').value;
+      const user = appState.users.find(u => u.id === userId);
+      if (user) {
+        appState.currentUser = user;
+        saveAppState();
+      }
+    }
+
+    function handleLogout() {
+      appState.currentUser = null;
+      saveAppState();
+    }
+
+    // --- SIDEBAR ---
+    function renderSidebar() {
+      const userRole = appState.currentUser.role;
+      const navItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'customers', label: 'Customers & Assets', icon: 'fa-address-book', roles: ['manager', 'csr', 'dispatcher'] },
+        { id: 'csr_board', label: 'CSR Slot Booking', icon: 'fa-calendar-days', roles: ['manager', 'csr'] },
+        { id: 'dispatch_board', label: 'Multi-Dispatch Board', icon: 'fa-headset', roles: ['manager', 'dispatcher'] },
+        { id: 'maintenance', label: 'Maintenance Tracker', icon: 'fa-screwdriver-wrench', roles: ['manager', 'csr', 'dispatcher'] },
+        { id: 'work_orders', label: 'Work Orders & Estimates', icon: 'fa-clipboard-list', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'price_book', label: 'Company Price Book', icon: 'fa-book-open', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'manuals', label: 'Manuals & Formulas', icon: 'fa-folder-open', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'logs', label: 'Activity & Audit Logs', icon: 'fa-shield-halved', roles: ['manager'] }
+      ];
+
+      return `
+        <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+              <div class="bg-slate-900 border border-red-600/30 px-3 py-1.5 rounded-xl shadow-lg shadow-red-600/10 flex items-center">
+                <span class="font-black text-xl tracking-tighter text-white">R</span>
+                <span class="font-black text-xl tracking-tighter text-red-500 ml-0.5">C</span>
+              </div>
+              <div>
+                <h1 class="font-bold text-white tracking-wide text-sm leading-tight">RELIANCE</h1>
+                <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest leading-tight">CONNECTIONS</p>
+              </div>
+            </div>
+
+            <nav class="p-3 space-y-1">
+              ${navItems.filter(item => item.roles.includes(userRole)).map(item => `
+                <button onclick="setView('${item.id}')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+                  appState.currentView === item.id 
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' 
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }">
+                  <i class="fa-solid ${item.icon} w-5 text-center"></i>
+                  ${item.label}
+                </button>
+              `).join('')}
+            </nav>
+          </div>
+
+          <div class="p-4 border-t border-slate-800 bg-slate-950/80">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-red-500 text-sm flex-shrink-0">
+                  ${appState.currentUser.name.charAt(0)}
+                </div>
+                <div class="truncate">
+                  <p class="text-xs font-semibold text-white truncate">${appState.currentUser.name}</p>
+                  <span class="inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/40">
+                    ${appState.currentUser.role}
+                  </span>
+                </div>
+              </div>
+              <button onclick="handleLogout()" title="Log Out" class="text-slate-400 hover:text-red-400 p-2 transition">
+                <i class="fa-solid fa-right-from-bracket"></i>
+              </button>
+            </div>
+          </div>
+        </aside>
+      `;
+    }
+
+    function renderHeader() {
+      return `
+        <header class="bg-slate-950 border-b border-slate-800 py-3 px-6 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <h2 class="text-lg font-bold text-white capitalize">
+              ${appState.currentView.replace('_', ' ')}
+            </h2>
+            <span class="text-xs text-slate-500">| Trades: HVAC, Plumbing, Electrical, Gates, Generators</span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            ${appState.currentUser.role === 'manager' ? `
+              <button onclick="openAddTeamMemberModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-2 transition">
+                <i class="fa-solid fa-user-plus text-red-500"></i> Add Team User
+              </button>
+            ` : ''}
+            <button onclick="openNewCustomerModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow flex items-center gap-2 transition">
+              <i class="fa-solid fa-plus"></i> New Customer
+            </button>
+          </div>
+        </header>
+      `;
+    }
+
+    function setView(view) {
+      appState.currentView = view;
+      saveAppState();
+    }
+
+    // --- VIEW ROUTER ---
+    function renderCurrentView() {
+      switch (appState.currentView) {
+        case 'dashboard': return renderDashboardView();
+        case 'customers': return renderCustomersView();
+        case 'csr_board': return renderCSRBoardView();
+        case 'dispatch_board': return renderDispatchBoardView();
+        case 'maintenance': return renderMaintenanceView();
+        case 'work_orders': return renderWorkOrdersView();
+        case 'price_book': return renderPriceBookView();
+        case 'manuals': return renderManualsView();
+        case 'logs': return renderLogsView();
+        default: return renderDashboardView();
+      }
+    }
+
+    // --- DASHBOARD VIEW ---
+    function renderDashboardView() {
+      const activeWorkOrders = appState.workOrders.filter(w => w.status !== 'Completed').length;
+      const overdueMaint = appState.customers.flatMap(c => c.equipments).filter(e => new Date(e.nextMaintenance) < new Date()).length;
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-900/30 rounded-2xl p-6 relative overflow-hidden">
+            <div class="relative z-10">
+              <h3 class="text-xl font-bold text-white mb-1">Welcome back, ${appState.currentUser.name}</h3>
+              <p class="text-xs text-slate-400">Reliance Connections Operational Dashboard & Field Trade Overview</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Total Customers</span>
+                <i class="fa-solid fa-users text-red-500"></i>
+              </div>
+              <p class="text-2xl font-black text-white">${appState.customers.length}</p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Tracked Sub-Assets</span>
+                <i class="fa-solid fa-layer-group text-red-500"></i>
+              </div>
+              <p class="text-2xl font-black text-white">${appState.customers.reduce((acc, c) => acc + c.equipments.length, 0)}</p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Active Jobs</span>
+                <i class="fa-solid fa-truck-fast text-red-500"></i>
+              </div>
+              <p class="text-2xl font-black text-white">${activeWorkOrders}</p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Maint. Alerts Due</span>
+                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+              </div>
+              <p class="text-2xl font-black text-amber-400">${overdueMaint}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- CSR SLOT BOOKING BOARD ---
+    function renderCSRBoardView() {
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">CSR Time-Slot Booking Matrix</h3>
+              <p class="text-xs text-slate-400 mt-1">Book customer service windows without technician assignment friction</p>
+            </div>
+            <div class="text-xs font-semibold px-3 py-1.5 bg-red-950/60 border border-red-800/50 text-red-400 rounded-lg">
+              Live Service Windows Grid
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Time Window</th>
+                  <th class="p-4">CSR Station 1</th>
+                  <th class="p-4">CSR Station 2</th>
+                  <th class="p-4">CSR Station 3</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${appState.csrSlots.map(slot => `
+                  <tr>
+                    <td class="p-4 font-bold font-mono text-slate-200 bg-slate-900/30">${slot.time}</td>${['csr1', 'csr2', 'csr3'].map(station => {
+                      const data = slot[station];
+                      return `
+                        <td class="p-4">
+                          ${data.booked ? `
+                            <div class="p-3 bg-red-950/30 border border-red-800/40 rounded-lg">
+                              <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">${data.jobType}</span>
+                              <p class="font-semibold text-white mt-0.5">${data.customer}</p>
+                              <span class="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-red-900/50 text-red-200 rounded">Booked Slot</span>
+                            </div>
+                          ` : `
+                            <button onclick="bookCSRSlot('${slot.time}', '${station}')" class="w-full py-4 border border-dashed border-slate-800 rounded-lg text-slate-500 hover:border-red-600/50 hover:text-red-400 transition font-medium text-xs">
+                              + Open Slot (Click to Book)
+                            </button>
+                          `}
+                        </td>
+                      `;
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function bookCSRSlot(time, station) {
+      const custName = prompt("Enter Customer Name for Booking:");
+      if (!custName) return;
+      const jobType = prompt("Enter Service Type (e.g., Gate Repair, HVAC Tuneup, Generator Check):", "Routine Maintenance");
+
+      const slotRow = appState.csrSlots.find(s => s.time === time);
+      if (slotRow) {
+        slotRow[station] = { booked: true, jobType: jobType || 'Service Call', customer: custName };
+        saveAppState();
+      }
+    }
+
+    // --- MULTI-DISPATCH BOARD VIEW ---
+    function renderDispatchBoardView() {
+      const statuses = ['Unassigned', 'Dispatched', 'In Progress', 'Completed'];
+
+      return `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <div>
+              <h3 class="font-bold text-white text-sm">Multi-Dispatcher Live Operations Board</h3>
+              <p class="text-xs text-slate-400">Assign technicians, manage route statuses, and monitor active trade calls</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            ${statuses.map(status => {
+              const orders = appState.workOrders.filter(w => w.status === status);
+              return `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-[650px]">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300">${status}</h4>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">${orders.length}</span>
+                  </div>
+
+                  <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                    ${orders.map(wo => `
+                      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="font-mono font-bold text-xs text-red-400">${wo.id}</span>
+                          <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">${wo.trade}</span>
+                        </div>
+
+                        <h5 class="font-bold text-white text-xs mb-1">${wo.customerName}</h5>
+                        <p class="text-[11px] text-slate-400 mb-3">${wo.equipmentName}</p>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-800/80 text-[11px]">
+                          <div>
+                            <label class="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Assign Tech</label>
+                            <select onchange="assignTechToWO('${wo.id}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:border-red-500">
+                              <option value="">-- Select Tech --</option>
+                              ${appState.technicians.map(t => `
+                                <option value="${t.id}" ${wo.techId === t.id ? 'selected' : ''}>${t.name} (${t.trades.join('/')})</option>
+                              `).join('')}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label class="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Update Status</label>
+                            <select onchange="updateWOStatus('${wo.id}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:border-red-500">
+                              ${statuses.map(s => `<option value="${s}" ${wo.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function assignTechToWO(woId, techId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      const tech = appState.technicians.find(t => t.id === techId);
+      if (wo) {
+        wo.techId = techId;
+        wo.techName = tech ? tech.name : '';
+        if (techId && wo.status === 'Unassigned') wo.status = 'Dispatched';
+        saveAppState();
+      }
+    }
+
+    function updateWOStatus(woId, newStatus) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (wo) {
+        wo.status = newStatus;
+        saveAppState();
+      }
+    }
+
+    // --- COMPANY PRICE BOOK VIEW ---
+    function renderPriceBookView() {
+      const isManager = appState.currentUser.role === 'manager';
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">Standard Company Price Book</h3>
+              <p class="text-xs text-slate-400 mt-1">Master rates for flat-rate labor, diagnostics, and routine maintenance</p>
+            </div>
+            ${isManager ? `
+              <button onclick="openAddPriceBookModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition">
+                <i class="fa-solid fa-plus"></i> Add Price Item
+              </button>
+            ` : `
+              <span class="text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">Read Only</span>
+            `}
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Item Code</th>
+                  <th class="p-4">Title</th>
+                  <th class="p-4">Category</th>
+                  <th class="p-4">Description</th>
+                  <th class="p-4 text-right">Standard Rate</th>
+                  ${isManager ? `<th class="p-4 text-center">Actions</th>` : ''}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${appState.priceBook.map(pb => `
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-4 font-mono font-bold text-red-400">${pb.code}</td>
+                    <td class="p-4 font-bold text-white">${pb.title}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 rounded font-semibold text-slate-300">${pb.category}</span></td>
+                    <td class="p-4 text-slate-400">${pb.description}</td>                     <td class="p-4 text-right font-mono font-bold text-emerald-400">$${pb.unitPrice.toFixed(2)}</td>${isManager ? `
+                      <td class="p-4 text-center space-x-2">
+                        <button onclick="editPriceBookItem('${pb.id}')" title="Edit Item" class="text-slate-400 hover:text-white">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deletePriceBookItem('${pb.id}')" title="Delete Item" class="text-slate-500 hover:text-red-400">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </td>
+                    ` : ''}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function openAddPriceBookModal() {
+      const code = prompt("Item Code (e.g., HVAC-REPAIR, GEN-PART):");
+      if (!code) return;
+      const title = prompt("Service / Item Title:");
+      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical):", "HVAC");
+      const unitPrice = parseFloat(prompt("Standard Rate ($):", "100.00") || "0");
+      const description = prompt("Description:");
+
+      appState.priceBook.push({
+        id: 'pb-' + Date.now(),
+        code: code.toUpperCase(),
+        title,
+        category: category || 'General',
+        unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
+        description: description || ''
+      });
+
+      saveAppState();
+    }
+
+    function editPriceBookItem(id) {
+      const pb = appState.priceBook.find(p => p.id === id);
+      if (!pb) return;
+
+      const code = prompt("Item Code:", pb.code);
+      if (!code) return;
+      const title = prompt("Title:", pb.title);
+      const category = prompt("Category:", pb.category);
+      const unitPrice = parseFloat(prompt("Standard Rate ($):", pb.unitPrice.toString()) || "0");
+      const description = prompt("Description:", pb.description);
+
+      pb.code = code.toUpperCase();
+      pb.title = title || pb.title;
+      pb.category = category || pb.category;
+      pb.unitPrice = isNaN(unitPrice) ? pb.unitPrice : unitPrice;
+      pb.description = description || pb.description;
+
+      saveAppState();
+    }
+
+    function deletePriceBookItem(id) {
+      if (confirm("Delete item from Price Book?")) {
+        appState.priceBook = appState.priceBook.filter(p => p.id !== id);
+        saveAppState();
+      }
+    }
+
+    // --- MANUALS & FORMULAS BASE VIEW ---
+    function renderManualsView() {
+      const isManager = appState.currentUser.role === 'manager';
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">Public Company Manuals & Technical Formulas</h3>
+              <p class="text-xs text-slate-400 mt-1">Shared knowledge repository viewable by all team members</p>
+            </div>
+            ${isManager ? `
+              <button onclick="openAddManualModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition">
+                <i class="fa-solid fa-file-circle-plus"></i> Upload Manual / Formula
+              </button>
+            ` : `
+              <span class="text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">View Only Mode</span>
+            `}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${appState.knowledgeBase.map(kb => `
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800">${kb.category}</span>
+                    <span class="text-[10px] font-bold text-red-400 bg-red-950/60 px-1.5 py-0.5 rounded">${kb.fileType}</span>
+                  </div>
+                  <h4 class="font-bold text-white text-sm mb-1">${kb.title}</h4>
+                  <p class="text-xs text-slate-400 mb-3">${kb.notes}</p>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                  <span class="text-[10px] text-slate-500">Added by ${kb.addedBy}</span>
+                  <div class="flex gap-2">
+                    <a href="#" onclick="alert('Downloading ${kb.title}...')" class="text-xs text-red-500 hover:text-red-400 font-bold flex items-center gap-1">
+                      <i class="fa-solid fa-download text-[10px]"></i> Open
+                    </a>
+                    ${isManager ? `
+                      <button onclick="deleteManual('${kb.id}')" class="text-xs text-slate-500 hover:text-red-400">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function openAddManualModal() {
+      const title = prompt("Enter Manual / Formula Title:");
+      if (!title) return;
+      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical):", "HVAC");
+      const fileType = prompt("File Type (PDF, DOCX, EXCEL, IMG):", "PDF");
+      const notes = prompt("Enter Brief Description or Reference Notes:");
+
+      appState.knowledgeBase.push({
+        id: 'kb-' + Date.now(),
+        title,
+        category: category || 'General',
+        fileType: fileType || 'PDF',
+        url: '#',
+        addedBy: appState.currentUser.name,
+        date: new Date().toISOString().split('T')[0],
+        notes: notes || 'No notes added.'
+      });
+
+      saveAppState();
+    }
+
+    function deleteManual(id) {
+      if (confirm("Are you sure you want to delete this manual from the public library?")) {
+        appState.knowledgeBase = appState.knowledgeBase.filter(k => k.id !== id);
+        saveAppState();
+      }
+    }
+
+    // --- WORK ORDERS & ESTIMATES VIEW ---
+    function renderWorkOrdersView() {
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">Work Orders, Estimates & Itemized Billing</h3>
+              <p class="text-xs text-slate-400 mt-1">Add price book line items directly to jobs</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            ${appState.workOrders.map(wo => {
+              const totalAmount = (wo.lineItems || []).reduce((acc, item) => acc + (item.total || 0), 0);
+              return `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+                  <div class="flex items-start justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <span class="font-mono font-bold text-red-500 text-sm">${wo.id}</span>
+                      <h4 class="font-bold text-white text-base mt-1">${wo.customerName}</h4>
+                      <p class="text-xs text-slate-400">${wo.equipmentName}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded text-xs font-bold ${wo.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                      ${wo.status}
+                    </span>
+                  </div>
+
+                  <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-receipt text-emerald-400"></i> Itemized Estimate</span>
+                      <button onclick="addLineItemToWO('${wo.id}')" class="text-[11px] bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded transition">
+                        + Add Line Item
+                      </button>
+                    </div>
+
+                    <div class="space-y-1">
+                      ${(wo.lineItems || []).map(item => `
+                        <div class="flex items-center justify-between text-xs py-1 text-slate-300">
+                          <span>${item.title} (x${item.qty})</span>
+                          <span class="font-mono text-emerald-400 font-semibold">$${item.total.toFixed(2)}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 flex justify-between font-bold text-xs text-white">
+                      <span>Total Estimate:</span>
+                      <span class="font-mono text-emerald-400">$${totalAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xs font-bold text-slate-300 mb-2">Technician Field Notes</h5>
+                    <div class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                      ${wo.workLogs.map(log => `
+                        <div class="p-2 bg-slate-900 rounded text-[11px] text-slate-300 border border-slate-800/80">
+                          <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                            <span class="font-bold text-slate-400">${log.user}</span>
+                            <span>${log.timestamp}</span>
+                          </div>
+                          <p>${log.note}</p>
+                        </div>
+                      `).join('')}
+                    </div>
+
+                    <form onsubmit="addWorkOrderNote(event, '${wo.id}')" class="mt-3 flex gap-2">
+                      <input type="text" placeholder="Add field note..." class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" required />
+                      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Post</button>
+                    </form>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function addLineItemToWO(woId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo) return;
+
+      const title = prompt("Line Item Title or Part Description:");
+      if (!title) return;
+      const qty = parseInt(prompt("Quantity:", "1") || "1");
+      const unitPrice = parseFloat(prompt("Unit Price ($):", "100.00") || "0");
+
+      if (!wo.lineItems) wo.lineItems = [];
+      wo.lineItems.push({
+        id: 'li-' + Date.now(),
+        title,
+        qty: isNaN(qty) ? 1 : qty,
+        unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
+        total: (isNaN(qty) ? 1 : qty) * (isNaN(unitPrice) ? 0 : unitPrice)
+      });
+
+      saveAppState();
+    }
+
+    function addWorkOrderNote(e, woId) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const noteText = input.value.trim();
+      if (!noteText) return;
+
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (wo) {
+        wo.workLogs.push({
+          id: 'wl-' + Date.now(),
+          timestamp: new Date().toLocaleString(),
+          user: appState.currentUser.name,
+          note: noteText
+        });
+        saveAppState();
+      }
+    }
+
+    // --- OTHER VIEWS ---
+    function renderCustomersView() {
+      const selectedCustomer = appState.customers.find(c => c.id === appState.selectedCustomerId) || appState.customers[0];
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-full">
+            <h3 class="font-bold text-white text-sm mb-4">Parent Accounts</h3>
+            <div class="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
+              ${appState.customers.map(c => `
+                <div onclick="selectCustomer('${c.id}')" class="p-3 rounded-lg border cursor-pointer ${selectedCustomer && selectedCustomer.id === c.id ? 'bg-red-950/30 border-red-600/50' : 'bg-slate-900 border-slate-800/80'}">
+                  <h4 class="font-bold text-slate-100 text-sm">${c.name}</h4>
+                  <p class="text-xs text-slate-400"><i class="fa-solid fa-phone"></i> ${c.phone}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          ${selectedCustomer ? `
+            <div class="lg:col-span-2 space-y-6 overflow-y-auto custom-scrollbar pr-1">
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                <h2 class="text-xl font-bold text-white">${selectedCustomer.name}</h2>
+                <p class="text-xs text-slate-400 mt-1">${selectedCustomer.address} \vert{}${selectedCustomer.phone}</p>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-white mb-3">Equipment Sub-Accounts (${selectedCustomer.equipments.length})</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  ${selectedCustomer.equipments.map(eq => `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">${eq.category}</span>
+                      <h4 class="font-bold text-white text-sm mt-2">${eq.name}</h4>
+                      <p class="text-xs text-slate-400">Model: ${eq.model} | S/N: ${eq.serial}</p>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function selectCustomer(id) { appState.selectedCustomerId = id; saveAppState(); }
+
+    function renderMaintenanceView() {
+      const allEquipments = appState.customers.flatMap(c => 
+        c.equipments.map(e => ({ ...e, parentCustomer: c.name, parentCustomerId: c.id }))
+      );
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">Preventative Maintenance Tracker</h3>
+              <p class="text-xs text-slate-400 mt-1">Automatic maintenance tracking across HVAC, Plumbing, Gates & Generators</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Customer</th>
+                  <th class="p-4">Equipment Sub-Account</th>
+                  <th class="p-4">Category</th>
+                  <th class="p-4">Next Due Date</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${allEquipments.map(eq => `
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-4 font-bold text-white">${eq.parentCustomer}</td>
+                    <td class="p-4 font-medium">${eq.name} <span class="text-slate-500 font-mono">(${eq.serial})</span></td>
+                    <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 rounded font-bold">${eq.category}</span></td>
+                    <td class="p-4 font-semibold text-emerald-400">${eq.nextMaintenance}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLogsView() {
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800"><h3 class="font-bold text-white text-sm">Manager Audit Log</h3></div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-4">
+            ${appState.customerChangeLogs.map(l => `<p class="text-xs text-slate-300 border-b border-slate-800 py-2">${l.timestamp} -${l.user}: ${l.action} (${l.details})</p>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function openNewCustomerModal() {
+      const name = prompt("Enter Customer / Company Name:");
+      if (!name) return;
+      const phone = prompt("Phone:");
+      const address = prompt("Address:");
+      const newC = { id: 'c-' + Date.now(), name, contactPerson: name, phone: phone || '', email: '', address: address || '', type: 'Commercial', created: '2024-02-18', equipments: [] };
+      appState.customers.push(newC);
+      saveAppState();
+    }
+
+    function openAddTeamMemberModal() {
+      const name = prompt("Enter Name:");
+      const role = prompt("Role (manager, csr, dispatcher, technician):", "csr");
+      if (name) { appState.users.push({ id: 'u-' + Date.now(), name, email: `${name}@reliance.com`, password: '123', role: role.toLowerCase() }); saveAppState(); }
+    }
+
+    renderApp();
+  </script>
+</body>
+</html>
