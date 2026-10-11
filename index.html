@@ -6,7 +6,7 @@
   <title>Reliance Connections (RC) CRM</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Icons -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -23,35 +23,64 @@
     const INITIAL_STATE = {
       currentUser: null,
       users: [
-        { id: 'u1', name: 'Marcus Vance', email: 'manager@reliance.com', password: 'admin123', role: 'manager' },
-        { id: 'u2', name: 'Sarah Jenkins', email: 'csr@reliance.com', password: 'csr123', role: 'csr' },
-        { id: 'u3', name: 'Dave Miller', email: 'dispatch@reliance.com', password: 'dispatch123', role: 'dispatcher' },
-        { id: 'u4', name: 'Jake Torres', email: 'tech@reliance.com', password: 'tech123', role: 'technician' }
+        { id: 'u1', name: 'Samuel Corson', email: 'manager@reliance.com', password: 'admin123', role: 'manager' },
+        { id: 'u2', name: 'Jasn Daniell', email: 'csr@reliance.com', password: 'csr123', role: 'csr' },
+        { id: 'u3', name: 'Alicia Lee', email: 'dispatch@reliance.com', password: 'dispatch123', role: 'dispatcher' },
+        { id: 'u4', name: 'Nathan Libranda', email: 'nlibranda@reliance.com', password: 'tech123', role: 'technician' },
+        { id: 'u5', name: 'Jason Libranda', email: 'jlibranda@reliance.com', password: 'tech123', role: 'technician' },
+        { id: 'u6', name: 'Chris Plymale', email: 'parts@reliance.com', password: 'parts123', role: 'parts' },
+        { id: 'u7', name: 'Gena Corson', email: 'gena@reliance.com', password: 'tech123', role: 'technician' },
+        { id: 'u8', name: 'Abby Corson', email: 'abby@reliance.com', password: 'csr123', role: 'csr' },
+        { id: 'u9', name: 'Tyler Cox', email: 'tcox@reliance.com', password: 'tech123', role: 'technician' }
       ],
       currentView: 'dashboard',
       selectedCustomerId: null,
+      searchTerm: '',
+      
+      // Audit Log Filters state
+      auditFilter: {
+        search: '',
+        user: '',
+        customer: '',
+        date: ''
+      },
+
+      // Time Tab Filter state
+      timeReportDate: new Date().toISOString().split('T')[0],
+      timeReportTechId: '',
+
+      // Restock Tab Filter state
+      restockReportDate: new Date().toISOString().split('T')[0],
+      restockReportUserId: '',
       
       technicians: [
-        { id: 't1', name: 'Jake Torres', trades: ['HVAC', 'Electrical'], phone: '555-0191', status: 'In Field' },
-        { id: 't2', name: 'Sam Reynolds', trades: ['Plumbing', 'Gates'], phone: '555-0192', status: 'Available' },
-        { id: 't3', name: 'Alex Rivera', trades: ['HVAC', 'Generators'], phone: '555-0193', status: 'Available' },
-        { id: 't4', name: 'Chris Evans', trades: ['Gates', 'Electrical'], phone: '555-0194', status: 'On Break' }
+        { id: 't1', name: 'Nathan Libranda', trades: ['HVAC', 'Time'], phone: '555-0191', status: 'In Field' },
+        { id: 't2', name: 'Jason Libranda', trades: ['HVAC', 'Electrical', 'Gates', 'Generators', 'Plumbing', 'Time'], phone: '555-0194', status: 'Available' },
+        { id: 't3', name: 'Gena Corson', trades: ['Plumbing', 'Electrical', 'Time'], phone: '555-0193', status: 'Available' },
+        { id: 't4', name: 'Tyler Cox', trades: ['HVAC', 'Generators', 'Time'], phone: '555-0195', status: 'On Break' }
+      ],
+
+      // Tech Support Contacts Directory
+      contacts: [
+        { id: 'cnt1', name: 'Trane Commercial Tech Support', phone: '(800) 532-3311', email: 'support@trane-commercial.com', address: '800 E Beaty St, Davidson, NC 28036' },
+        { id: 'cnt2', name: 'Generac Dealer Technical Hotline', phone: '(888) 436-3722', email: 'techsupport@generac.com', address: 'S45W29290 Hwy 59, Waukesha, WI 53189' },
+        { id: 'cnt3', name: 'LiftMaster Gate Support Desk', phone: '(800) 528-2806', email: 'techsupport@liftmaster.com', address: '300 Windsor Dr, Oak Brook, IL 60523' }
       ],
 
       // Shared Knowledge Base
       knowledgeBase: [
-        { id: 'kb1', title: 'Trane Rooftop HVAC Service Manual', category: 'HVAC', fileType: 'PDF', url: '#', addedBy: 'Marcus Vance', date: '2024-01-10', notes: 'Includes refrigerant pressure curves & wiring diagrams.' },
-        { id: 'kb2', title: 'Generac Generator Diagnostic & Voltage Formulas', category: 'Generators', fileType: 'DOCX', url: '#', addedBy: 'Marcus Vance', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing formulas.' },
-        { id: 'kb3', title: 'LiftMaster Gate Barrier Loop Wiring Guide', category: 'Gates', fileType: 'PDF', url: '#', addedBy: 'Marcus Vance', date: '2024-02-01', notes: 'Diagram for induction loop detectors and access control keypads.' }
+        { id: 'kb1', title: 'Trane Rooftop HVAC Service Manual', category: 'HVAC', fileType: 'PDF', url: '#', addedBy: 'Samuel Corson', date: '2024-01-10', notes: 'Includes refrigerant pressure curves & wiring diagrams.' },
+        { id: 'kb2', title: 'Generac Generator Diagnostic & Voltage Formulas', category: 'Generators', fileType: 'DOCX', url: '#', addedBy: 'Samuel Corson', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing formulas.' },
+        { id: 'kb3', title: 'LiftMaster Gate Barrier Loop Wiring Guide', category: 'Gates', fileType: 'PDF', url: '#', addedBy: 'Samuel Corson', date: '2024-02-01', notes: 'Diagram for induction loop detectors and access control keypads.' }
       ],
 
       // Company Price Book
       priceBook: [
-        { id: 'pb1', code: 'HVAC-PM', title: 'HVAC Semi-Annual Tune-Up', category: 'HVAC', unitPrice: 150.00, description: 'Filter replacement, coil inspection, and refrigerant check.' },
-        { id: 'pb2', code: 'GEN-DIAG', title: 'Generator Load Test & Diagnostic', category: 'Generators', unitPrice: 220.00, description: 'Full system diagnostic run and transfer switch inspection.' },
-        { id: 'pb3', code: 'PLM-FLUSH', title: 'Tankless Water Heater Descaling', category: 'Plumbing', unitPrice: 180.00, description: 'Flush system with descaling solution to remove hard water deposits.' },
-        { id: 'pb4', code: 'GATE-ROUT', title: 'Automatic Gate Arm Lubrication & Alignment', category: 'Gates', unitPrice: 125.00, description: 'Re-align gate tracks, check safety loops, and grease mechanical hinges.' },
-        { id: 'pb5', code: 'ELE-INSP', title: 'Commercial 200A Electrical Panel Inspection', category: 'Electrical', unitPrice: 200.00, description: 'Thermal camera check for hot breakers and ground fault verification.' }
+        { id: 'pb1', code: 'HVAC-PM-45', title: 'HVAC Semi-Annual Tune-Up', category: 'HVAC', unitPrice: 150.00, description: 'Filter replacement, coil inspection, and refrigerant check.' },
+        { id: 'pb2', code: 'GEN-DIAG-45', title: 'Generator Load Test & Diagnostic', category: 'Generators', unitPrice: 220.00, description: 'Full system diagnostic run and transfer switch inspection.' },
+        { id: 'pb3', code: 'PLM-FLUSH-30', title: 'Tankless Water Heater Descaling', category: 'Plumbing', unitPrice: 180.00, description: 'Flush system with descaling solution to remove hard water deposits.' },
+        { id: 'pb4', code: 'GATE-ROUT-30', title: 'Automatic Gate Arm Lubrication & Alignment', category: 'Gates', unitPrice: 125.00, description: 'Re-align gate tracks, check safety loops, and grease mechanical hinges.' },
+        { id: 'pb5', code: 'ELE-INSP-30', title: 'Commercial 200A Electrical Panel Inspection', category: 'Electrical', unitPrice: 200.00, description: 'Thermal camera check for hot breakers and ground fault verification.' }
       ],
 
       customers: [
@@ -100,15 +129,15 @@
           trade: 'HVAC',
           status: 'In Progress',
           techId: 't1',
-          techName: 'Jake Torres',
-          createdDate: '2024-02-18',
+          techName: 'Nathan Libranda',
+          createdDate: new Date().toISOString().split('T')[0],
           description: 'Semi-annual preventative maintenance check.',
           lineItems: [
-            { id: 'li1', title: 'HVAC Semi-Annual Tune-Up', qty: 1, unitPrice: 150.00, total: 150.00 },
-            { id: 'li2', title: 'Heavy Duty 20x25 Air Filters (3 Pack)', qty: 1, unitPrice: 85.00, total: 85.00 }
+            { id: 'li1', code: 'FLT-2025', title: 'Heavy Duty 20x25 Air Filters (3 Pack)', qty: 1, unitPrice: 85.00, minutes: 15, spiff: 10.00, total: 85.00 },
+            { id: 'li2', code: 'R410A-CYL', title: 'R-410A Refrigerant Recovery Cylinder', qty: 1, unitPrice: 150.00, minutes: 60, spiff: 25.00, total: 150.00 }
           ],
           workLogs: [
-            { id: 'wl1', timestamp: '2024-02-18 08:15 AM', user: 'Jake Torres', note: 'Arrived on site. Replaced filters and tested airflow.' }
+            { id: 'wl1', timestamp: new Date().toISOString().split('T')[0] + ' 08:15 AM', user: 'Nathan Libranda', note: 'Arrived on site. Replaced filters and tested airflow.' }
           ]
         },
         {
@@ -116,16 +145,18 @@
           customerId: 'c102',
           customerName: 'Eleanor Vance',
           equipmentName: 'Home Tankless Water Heater',
-          trade: 'Plumbing',
-          status: 'Unassigned',
-          techId: '',
-          techName: '',
-          createdDate: '2024-02-18',
-          description: 'Water heater flush & system diagnostic.',
+          trade: 'Time',
+          status: 'In Progress',
+          techId: 't2',
+          techName: 'Jason Libranda',
+          createdDate: new Date().toISOString().split('T')[0],
+          description: 'Special hourly diagnostics and time repair task.',
           lineItems: [
-            { id: 'li3', title: 'Tankless Water Heater Descaling', qty: 1, unitPrice: 180.00, total: 180.00 }
+            { id: 'li3', code: 'WTR-VALVE', title: 'Replacement Water Control Valve', qty: 1, unitPrice: 90.00, minutes: 120, spiff: 30.00, total: 90.00 }
           ],
-          workLogs: []
+          workLogs: [
+            { id: 'wl2', timestamp: new Date().toISOString().split('T')[0] + ' 01:00 PM', user: 'Jason Libranda', note: 'On site performing hourly service.' }
+          ]
         }
       ],
 
@@ -133,7 +164,7 @@
         {
           id: 'log-1',
           timestamp: '2024-02-18 09:12 AM',
-          user: 'Sarah Jenkins (CSR)',
+          user: 'Nathan Libranda',
           customerId: 'c101',
           customerName: 'Apex Commercial Plaza',
           action: 'Updated Phone Number',
@@ -143,28 +174,58 @@
     };
 
     function loadAppState() {
-      const saved = localStorage.getItem('reliance_crm_state_v3');
+      const saved = localStorage.getItem('reliance_crm_state_v10');
       return saved ? JSON.parse(saved) : INITIAL_STATE;
     }
 
     function saveAppState() {
-      localStorage.setItem('reliance_crm_state_v3', JSON.stringify(appState));
+      localStorage.setItem('reliance_crm_state_v10', JSON.stringify(appState));
       renderApp();
     }
 
     let appState = loadAppState();
 
-    function addCustomerChangeLog(customerId, customerName, action, details) {
-      const newLog = {
-        id: 'log-' + Date.now(),
-        timestamp: new Date().toLocaleString(),
-        user: appState.currentUser ? `${appState.currentUser.name} (${appState.currentUser.role.toUpperCase()})` : 'System',
-        customerId,
-        customerName,
-        action,
-        details
-      };
-      appState.customerChangeLogs.unshift(newLog);
+    function updateSearch(value) {
+      appState.searchTerm = value;
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.innerHTML = renderCurrentView();
+      }
+    }
+
+    function updateAuditFilter(field, value) {
+      appState.auditFilter[field] = value;
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.innerHTML = renderCurrentView();
+      }
+    }
+
+    function resetAuditFilters() {
+      appState.auditFilter = { search: '', user: '', customer: '', date: '' };
+      saveAppState();
+    }
+
+    function updateTimeFilters(field, value) {
+      appState[field] = value;
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.innerHTML = renderCurrentView();
+      }
+    }
+
+    function updateRestockFilters(field, value) {
+      appState[field] = value;
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.innerHTML = renderCurrentView();
+      }
+    }
+
+    function setView(view) {
+      appState.currentView = view;
+      appState.searchTerm = '';
+      saveAppState();
     }
 
     // --- MAIN RENDERER ---
@@ -246,14 +307,17 @@
     function renderSidebar() {
       const userRole = appState.currentUser.role;
       const navItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
-        { id: 'customers', label: 'Customers & Assets', icon: 'fa-address-book', roles: ['manager', 'csr', 'dispatcher'] },
+        { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
+        { id: 'customers', label: 'Customers & Assets', icon: 'fa-address-book', roles: ['manager', 'csr', 'dispatcher', 'parts'] },
+        { id: 'contacts', label: 'Contacts', icon: 'fa-address-card', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
+        { id: 'time_report', label: 'Time', icon: 'fa-clock', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'restock_report', label: 'Restock', icon: 'fa-boxes-packing', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
         { id: 'csr_board', label: 'CSR Slot Booking', icon: 'fa-calendar-days', roles: ['manager', 'csr'] },
-        { id: 'dispatch_board', label: 'Multi-Dispatch Board', icon: 'fa-headset', roles: ['manager', 'dispatcher'] },
+        { id: 'dispatch_board', label: 'Multi-Dispatch Board', icon: 'fa-headset', roles: ['manager', 'dispatcher', 'parts'] },
         { id: 'maintenance', label: 'Maintenance Tracker', icon: 'fa-screwdriver-wrench', roles: ['manager', 'csr', 'dispatcher'] },
-        { id: 'work_orders', label: 'Work Orders & Estimates', icon: 'fa-clipboard-list', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
-        { id: 'price_book', label: 'Company Price Book', icon: 'fa-book-open', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
-        { id: 'manuals', label: 'Manuals & Formulas', icon: 'fa-folder-open', roles: ['manager', 'csr', 'dispatcher', 'technician'] },
+        { id: 'work_orders', label: 'Work Orders & Estimates', icon: 'fa-clipboard-list', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
+        { id: 'price_book', label: 'Company Price Book', icon: 'fa-book-open', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
+        { id: 'manuals', label: 'Manuals & Formulas', icon: 'fa-folder-open', roles: ['manager', 'csr', 'dispatcher', 'technician', 'parts'] },
         { id: 'logs', label: 'Activity & Audit Logs', icon: 'fa-shield-halved', roles: ['manager'] }
       ];
 
@@ -314,7 +378,7 @@
             <h2 class="text-lg font-bold text-white capitalize">
               ${appState.currentView.replace('_', ' ')}
             </h2>
-            <span class="text-xs text-slate-500">| Trades: HVAC, Plumbing, Electrical, Gates, Generators</span>
+            <span class="text-xs text-slate-500">| Trades: HVAC, Plumbing, Electrical, Gates, Generators, Time</span>
           </div>
 
           <div class="flex items-center gap-3">
@@ -331,16 +395,14 @@
       `;
     }
 
-    function setView(view) {
-      appState.currentView = view;
-      saveAppState();
-    }
-
     // --- VIEW ROUTER ---
     function renderCurrentView() {
       switch (appState.currentView) {
         case 'dashboard': return renderDashboardView();
         case 'customers': return renderCustomersView();
+        case 'contacts': return renderContactsView();
+        case 'time_report': return renderTimeReportView();
+        case 'restock_report': return renderRestockReportView();
         case 'csr_board': return renderCSRBoardView();
         case 'dispatch_board': return renderDispatchBoardView();
         case 'maintenance': return renderMaintenanceView();
@@ -403,6 +465,362 @@
       `;
     }
 
+    // --- TIME TAB & DAILY TECH REPORT VIEW ---
+    function renderTimeReportView() {
+      const isManager = appState.currentUser.role === 'manager';
+      const currentUser = appState.currentUser;
+
+      let targetTechName = '';
+      if (!isManager) {
+        targetTechName = currentUser.name;
+      } else if (appState.timeReportTechId) {
+        const foundTech = appState.technicians.find(t => t.id === appState.timeReportTechId);
+        if (foundTech) targetTechName = foundTech.name;
+      }
+
+      const selectedDate = appState.timeReportDate || new Date().toISOString().split('T')[0];
+
+      const matchingWorkOrders = appState.workOrders.filter(wo => {
+        const matchesDate = wo.createdDate === selectedDate;
+        const matchesTech = isManager ? (!appState.timeReportTechId || wo.techName === targetTechName) : (wo.techName === currentUser.name);
+        return matchesDate && matchesTech;
+      });
+
+      let totalMinutes = 0;
+      let totalSpiff = 0;
+      matchingWorkOrders.forEach(wo => {
+        (wo.lineItems || []).forEach(item => {
+          totalMinutes += (item.minutes || 0) * (item.qty || 1);
+          totalSpiff += (item.spiff || 0) * (item.qty || 1);
+        });
+      });
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-white text-sm">Daily Technician Time & Earnings Report</h3>
+              <p class="text-xs text-slate-400 mt-1">Review jobs visited, site duration, minutes, and SPIFF bonuses</p>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              ${isManager ? `
+                <div>
+                  <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Select Technician</label>
+                  <select onchange="updateTimeFilters('timeReportTechId', this.value)" class="bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500">
+                    <option value="">All Technicians</option>
+                    ${appState.technicians.map(t => `<option value="${t.id}" ${appState.timeReportTechId === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Report Date</label>
+                <input type="date" value="${selectedDate}" onchange="updateTimeFilters('timeReportDate', this.value)" class="bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <span class="text-xs text-slate-400 uppercase font-semibold">Total Minutes for ${selectedDate}</span>
+                <p class="text-2xl font-black text-amber-400 mt-1">${totalMinutes} Mins</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-amber-950/40 border border-amber-800/50 flex items-center justify-center text-amber-400">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <span class="text-xs text-slate-400 uppercase font-semibold">Total SPIFF Bonus for ${selectedDate}</span>
+                <p class="text-2xl font-black text-rose-400 mt-1">$${totalSpiff.toFixed(2)}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-rose-950/40 border border-rose-800/50 flex items-center justify-center text-rose-400">
+                <i class="fa-solid fa-award"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Job #</th>
+                  <th class="p-4">Customer Name</th>
+                  <th class="p-4">Assigned Tech</th>
+                  <th class="p-4">Trade Category</th>
+                  <th class="p-4">Time on Site / Duration</th>
+                  <th class="p-4 text-center">Total Minutes</th>
+                  <th class="p-4 text-right">SPIFF Bonus</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${matchingWorkOrders.length > 0 ? matchingWorkOrders.map(wo => {
+                  const woMinutes = (wo.lineItems || []).reduce((acc, item) => acc + ((item.minutes || 0) * (item.qty || 1)), 0);
+                  const woSpiff = (wo.lineItems || []).reduce((acc, item) => acc + ((item.spiff || 0) * (item.qty || 1)), 0);
+                  const durationHours = (woMinutes / 60).toFixed(1);
+
+                  return `
+                    <tr class="hover:bg-slate-900/50">
+                      <td class="p-4 font-mono font-bold text-red-400">${wo.id}</td>
+                      <td class="p-4 font-bold text-white">${wo.customerName}</td>
+                      <td class="p-4 text-slate-300">${wo.techName || 'Unassigned'}</td>
+                      <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 rounded text-slate-200 font-semibold">${wo.trade}</span></td>
+                      <td class="p-4 text-slate-300">${durationHours} hrs (${woMinutes} mins on site)</td>
+                      <td class="p-4 text-center font-mono font-bold text-amber-400">${woMinutes} Mins</td>                       <td class="p-4 text-right font-mono font-bold text-rose-400">$${woSpiff.toFixed(2)}</td>
+                    </tr>
+                  `;
+                }).join('') : `
+                  <tr>
+                    <td colspan="7" class="p-6 text-center text-slate-500 italic">No job records found for this date and technician filter.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- RESTOCK TAB & DAILY PARTS REPORT VIEW ---
+    function renderRestockReportView() {
+      const isManager = appState.currentUser.role === 'manager';
+      const currentUser = appState.currentUser;
+
+      let targetUserName = '';
+      if (!isManager) {
+        targetUserName = currentUser.name;
+      } else if (appState.restockReportUserId) {
+        const foundUser = appState.users.find(u => u.id === appState.restockReportUserId);
+        if (foundUser) targetUserName = foundUser.name;
+      }
+
+      const selectedDate = appState.restockReportDate || new Date().toISOString().split('T')[0];
+
+      const matchingWorkOrders = appState.workOrders.filter(wo => {
+        const matchesDate = wo.createdDate === selectedDate;
+        const matchesUser = isManager ? (!appState.restockReportUserId || wo.techName === targetUserName) : (wo.techName === currentUser.name);
+        return matchesDate && matchesUser;
+      });
+
+      let restockItems = [];
+      matchingWorkOrders.forEach(wo => {
+        (wo.lineItems || []).forEach(item => {
+          restockItems.push({
+            jobId: wo.id,
+            customerName: wo.customerName,
+            techName: wo.techName || 'Unassigned',
+            partDescription: item.title,
+            partNumber: item.code || 'N/A',
+            qty: item.qty || 1
+          });
+        });
+      });
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-white text-sm">Daily Restock & Parts Used Report</h3>
+              <p class="text-xs text-slate-400 mt-1">Review parts and equipment components pulled from work order line items</p>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              ${isManager ? `
+                <div>
+                  <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Select Tech / Staff</label>
+                  <select onchange="updateRestockFilters('restockReportUserId', this.value)" class="bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500">
+                    <option value="">All Techs / Staff</option>
+                    ${appState.users.filter(u => u.role === 'technician' || u.role === 'parts').map(u => `<option value="${u.id}" ${appState.restockReportUserId === u.id ? 'selected' : ''}>${u.name} (${u.role})</option>`).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Report Date</label>
+                <input type="date" value="${selectedDate}" onchange="updateRestockFilters('restockReportDate', this.value)" class="bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Job #</th>
+                  <th class="p-4">Customer Name</th>
+                  <th class="p-4">Tech Name</th>
+                  <th class="p-4">Part Number / Code</th>
+                  <th class="p-4">Part Description</th>
+                  <th class="p-4 text-center">Qty Used</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${restockItems.length > 0 ? restockItems.map(item => `
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-4 font-mono font-bold text-red-400">${item.jobId}</td>
+                    <td class="p-4 font-bold text-white">${item.customerName}</td>
+                    <td class="p-4 text-slate-300">${item.techName}</td>
+                    <td class="p-4 font-mono font-semibold text-amber-400">${item.partNumber}</td>
+                    <td class="p-4 text-slate-200">${item.partDescription}</td>
+                    <td class="p-4 text-center font-bold text-emerald-400">x${item.qty}</td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="6" class="p-6 text-center text-slate-500 italic">No restock or parts usage records found for this date.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- CONTACTS VIEW ---
+    function renderContactsView() {
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredContacts = appState.contacts.filter(cnt => 
+        cnt.name.toLowerCase().includes(query) || 
+        cnt.phone.toLowerCase().includes(query) || 
+        cnt.email.toLowerCase().includes(query) || 
+        cnt.address.toLowerCase().includes(query)
+      );
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-white text-sm">Tech Support & Vendor Contacts Directory</h3>
+              <p class="text-xs text-slate-400 mt-1">Shared contact information accessible by all team members</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-64">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+                <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search contacts..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
+              </div>
+              <button onclick="openAddContactModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition flex-shrink-0">
+                <i class="fa-solid fa-user-plus"></i> Add Contact
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${filteredContacts.map(cnt => `
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/40">Tech Support</span>
+                    <button onclick="deleteContact('${cnt.id}')" title="Delete Contact" class="text-slate-500 hover:text-red-400 text-xs">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                  <h4 class="font-bold text-white text-base mb-3">${cnt.name}</h4>
+                  
+                  <div class="space-y-2 text-xs text-slate-300">
+                    <p class="flex items-center gap-2"><i class="fa-solid fa-phone text-red-500 w-4"></i> <span class="font-mono">${cnt.phone}</span></p>
+                    <p class="flex items-center gap-2"><i class="fa-solid fa-envelope text-red-500 w-4"></i> <a href="mailto:${cnt.email}" class="text-red-400 hover:underline truncate">${cnt.email}</a></p>
+                    <p class="flex items-start gap-2"><i class="fa-solid fa-location-dot text-red-500 w-4 mt-0.5"></i> <span class="text-slate-400">${cnt.address}</span></p>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function openAddContactModal() {
+      const name = prompt("Enter Tech Support / Vendor Name:");
+      if (!name) return;
+      const phone = prompt("Phone Number:", "555-0100");
+      const email = prompt("Email Address:", "support@vendor.com");
+      const address = prompt("Physical/Mailing Address:", "123 Support Way");
+
+      appState.contacts.push({
+        id: 'cnt-' + Date.now(),
+        name,
+        phone: phone || '',
+        email: email || '',
+        address: address || ''
+      });
+
+      saveAppState();
+    }
+
+    function deleteContact(id) {
+      if (confirm("Are you sure you want to remove this contact?")) {
+        appState.contacts = appState.contacts.filter(c => c.id !== id);
+        saveAppState();
+      }
+    }
+
+    // --- CUSTOMERS & ASSETS VIEW ---
+    function renderCustomersView() {
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredCustomers = appState.customers.filter(c => 
+        c.name.toLowerCase().includes(query) || 
+        c.phone.toLowerCase().includes(query) || 
+        c.address.toLowerCase().includes(query) ||
+        c.equipments.some(e => e.name.toLowerCase().includes(query) || e.serial.toLowerCase().includes(query))
+      );
+
+      const selectedCustomer = filteredCustomers.find(c => c.id === appState.selectedCustomerId) || filteredCustomers[0];
+
+      return `
+        <div class="space-y-4 h-full flex flex-col">
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-sm">Customer & Asset Directory</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Manage customer accounts and connected equipment</p>
+            </div>
+            <div class="relative w-64">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+              <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search customers or assets..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-full overflow-hidden">
+              <h3 class="font-bold text-white text-xs uppercase tracking-wider mb-3">Parent Accounts</h3>
+              <div class="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                ${filteredCustomers.map(c => `
+                  <div onclick="selectCustomer('${c.id}')" class="p-3 rounded-lg border cursor-pointer ${selectedCustomer && selectedCustomer.id === c.id ? 'bg-red-950/30 border-red-600/50' : 'bg-slate-900 border-slate-800/80'}">
+                    <h4 class="font-bold text-slate-100 text-sm">${c.name}</h4>
+                    <p class="text-xs text-slate-400"><i class="fa-solid fa-phone"></i> ${c.phone}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            ${selectedCustomer ? `
+              <div class="lg:col-span-2 space-y-6 overflow-y-auto custom-scrollbar pr-1">
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                  <h2 class="text-xl font-bold text-white">${selectedCustomer.name}</h2>
+                  <p class="text-xs text-slate-400 mt-1">${selectedCustomer.address} \vert{}${selectedCustomer.phone}</p>
+                </div>
+
+                <div>
+                  <h3 class="text-sm font-bold text-white mb-3">Equipment Sub-Accounts (${selectedCustomer.equipments.length})</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${selectedCustomer.equipments.map(eq => `
+                      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">${eq.category}</span>
+                        <h4 class="font-bold text-white text-sm mt-2">${eq.name}</h4>
+                        <p class="text-xs text-slate-400">Model: ${eq.model} | S/N: ${eq.serial}</p>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            ` : '<div class="lg:col-span-2 text-slate-500 text-xs p-5">No matching customers found.</div>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function selectCustomer(id) { appState.selectedCustomerId = id; saveAppState(); }
+
     // --- CSR SLOT BOOKING BOARD ---
     function renderCSRBoardView() {
       return `
@@ -410,7 +828,7 @@
           <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex items-center justify-between">
             <div>
               <h3 class="font-bold text-white text-sm">CSR Time-Slot Booking Matrix</h3>
-              <p class="text-xs text-slate-400 mt-1">Book customer service windows without technician assignment friction</p>
+              <p class="text-xs text-slate-400 mt-1">Book and fully edit customer service windows and appointment details</p>
             </div>
             <div class="text-xs font-semibold px-3 py-1.5 bg-red-950/60 border border-red-800/50 text-red-400 rounded-lg">
               Live Service Windows Grid
@@ -435,9 +853,19 @@
                       return `
                         <td class="p-4">
                           ${data.booked ? `
-                            <div class="p-3 bg-red-950/30 border border-red-800/40 rounded-lg">
-                              <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">${data.jobType}</span>
-                              <p class="font-semibold text-white mt-0.5">${data.customer}</p>
+                            <div class="p-3 bg-red-950/30 border border-red-800/40 rounded-lg relative group">
+                              <div class="flex items-start justify-between">
+                                <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">${data.jobType}</span>
+                                <div class="space-x-1">
+                                  <button onclick="editCSRSlot('${slot.time}', '${station}')" title="Edit Slot Details" class="text-slate-400 hover:text-white text-[11px]">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                  </button>
+                                  <button onclick="clearCSRSlot('${slot.time}', '${station}')" title="Clear/Unbook Slot" class="text-slate-500 hover:text-red-400 text-[11px]">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                  </button>
+                                </div>
+                              </div>
+                              <p class="font-semibold text-white mt-1">${data.customer}</p>
                               <span class="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-red-900/50 text-red-200 rounded">Booked Slot</span>
                             </div>
                           ` : `
@@ -469,22 +897,65 @@
       }
     }
 
+    function editCSRSlot(time, station) {
+      const slotRow = appState.csrSlots.find(s => s.time === time);
+      if (!slotRow || !slotRow[station].booked) return;
+
+      const currentData = slotRow[station];
+      const custName = prompt("Edit Customer Name:", currentData.customer);
+      if (custName === null) return;
+      const jobType = prompt("Edit Service Type:", currentData.jobType);
+      if (jobType === null) return;
+
+      slotRow[station] = {
+        booked: true,
+        customer: custName || currentData.customer,
+        jobType: jobType || currentData.jobType
+      };
+      saveAppState();
+    }
+
+    function clearCSRSlot(time, station) {
+      if (confirm("Are you sure you want to clear/unbook this CSR slot?")) {
+        const slotRow = appState.csrSlots.find(s => s.time === time);
+        if (slotRow) {
+          slotRow[station] = { booked: false };
+          saveAppState();
+        }
+      }
+    }
+
     // --- MULTI-DISPATCH BOARD VIEW ---
     function renderDispatchBoardView() {
       const statuses = ['Unassigned', 'Dispatched', 'In Progress', 'Completed'];
+      const query = (appState.searchTerm || '').toLowerCase();
 
       return `
         <div class="space-y-6">
-          <div class="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div class="flex flex-col md:flex-row items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 gap-4">
             <div>
               <h3 class="font-bold text-white text-sm">Multi-Dispatcher Live Operations Board</h3>
-              <p class="text-xs text-slate-400">Assign technicians, manage route statuses, and monitor active trade calls</p>
+              <p class="text-xs text-slate-400">Assign technicians, manage statuses, and fully edit work order details</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-64">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+                <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search work orders..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
+              </div>
+              <button onclick="openCreateWorkOrderModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow flex items-center gap-2 transition flex-shrink-0">
+                <i class="fa-solid fa-plus"></i> New Work Order
+              </button>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             ${statuses.map(status => {
-              const orders = appState.workOrders.filter(w => w.status === status);
+              const orders = appState.workOrders.filter(w => {
+                const matchesStatus = w.status === status;
+                const matchesQuery = !query || w.id.toLowerCase().includes(query) || w.customerName.toLowerCase().includes(query) || w.equipmentName.toLowerCase().includes(query) || w.trade.toLowerCase().includes(query);
+                return matchesStatus && matchesQuery;
+              });
+
               return `
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-[650px]">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
@@ -497,11 +968,17 @@
                       <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 hover:border-slate-700 transition">
                         <div class="flex items-center justify-between mb-2">
                           <span class="font-mono font-bold text-xs text-red-400">${wo.id}</span>
-                          <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">${wo.trade}</span>
+                          <div class="space-x-1">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">${wo.trade}</span>
+                            <button onclick="editWorkOrderDetails('${wo.id}')" title="Edit Full Details" class="text-slate-400 hover:text-white text-xs ml-1">
+                              <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                          </div>
                         </div>
 
-                        <h5 class="font-bold text-white text-xs mb-1">${wo.customerName}</h5>
-                        <p class="text-[11px] text-slate-400 mb-3">${wo.equipmentName}</p>
+                        <h5 class="font-bold text-white text-xs mb-0.5">${wo.customerName}</h5>
+                        <p class="text-[11px] text-slate-400 mb-1">${wo.equipmentName}</p>
+                        <p class="text-[10px] text-slate-500 italic mb-3 line-clamp-2">${wo.description || 'No description provided.'}</p>
 
                         <div class="space-y-2 pt-2 border-t border-slate-800/80 text-[11px]">
                           <div>
@@ -551,24 +1028,82 @@
       }
     }
 
+    function editWorkOrderDetails(woId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo) return;
+
+      const customerName = prompt("Edit Customer Name:", wo.customerName);
+      if (customerName === null) return;
+      const equipmentName = prompt("Edit Equipment / Asset Name:", wo.equipmentName);
+      if (equipmentName === null) return;
+      const trade = prompt("Edit Trade Category (HVAC, Plumbing, Electrical, Gates, Generators, Time):", wo.trade);
+      if (trade === null) return;
+      const description = prompt("Edit Job Description / Notes:", wo.description);
+      if (description === null) return;
+
+      wo.customerName = customerName || wo.customerName;
+      wo.equipmentName = equipmentName || wo.equipmentName;
+      wo.trade = trade || wo.trade;
+      wo.description = description !== null ? description : wo.description;
+
+      saveAppState();
+    }
+
+    function openCreateWorkOrderModal() {
+      const customerName = prompt("Enter Customer Name:");
+      if (!customerName) return;
+      const equipmentName = prompt("Enter Equipment / Asset Name:", "General Service Call");
+      const trade = prompt("Trade Category (HVAC, Plumbing, Electrical, Gates, Generators, Time):", "HVAC");
+      const description = prompt("Job Description:", "Scheduled service ticket.");
+
+      const newWO = {
+        id: 'WO-' + Math.floor(1000 + Math.random() * 9000),
+        customerId: 'c-custom',
+        customerName,
+        equipmentName: equipmentName || 'General Asset',
+        trade: trade || 'HVAC',
+        status: 'Unassigned',
+        techId: '',
+        techName: '',
+        createdDate: new Date().toISOString().split('T')[0],
+        description: description || '',
+        lineItems: [],
+        workLogs: []
+      };
+
+      appState.workOrders.push(newWO);
+      saveAppState();
+    }
+
     // --- COMPANY PRICE BOOK VIEW ---
     function renderPriceBookView() {
       const isManager = appState.currentUser.role === 'manager';
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredPriceBook = appState.priceBook.filter(pb => 
+        pb.code.toLowerCase().includes(query) || 
+        pb.title.toLowerCase().includes(query) || 
+        pb.category.toLowerCase().includes(query) || 
+        pb.description.toLowerCase().includes(query)
+      );
 
       return `
         <div class="space-y-6">
-          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 class="font-bold text-white text-sm">Standard Company Price Book</h3>
               <p class="text-xs text-slate-400 mt-1">Master rates for flat-rate labor, diagnostics, and routine maintenance</p>
             </div>
-            ${isManager ? `
-              <button onclick="openAddPriceBookModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition">
-                <i class="fa-solid fa-plus"></i> Add Price Item
-              </button>
-            ` : `
-              <span class="text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">Read Only</span>
-            `}
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-64">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+                <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search price book..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
+              </div>
+              ${isManager ? `
+                <button onclick="openAddPriceBookModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition flex-shrink-0">
+                  <i class="fa-solid fa-plus"></i> Add Item
+                </button>
+              ` : ''}
+            </div>
           </div>
 
           <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
@@ -584,7 +1119,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
-                ${appState.priceBook.map(pb => `
+                ${filteredPriceBook.map(pb => `
                   <tr class="hover:bg-slate-900/50">
                     <td class="p-4 font-mono font-bold text-red-400">${pb.code}</td>
                     <td class="p-4 font-bold text-white">${pb.title}</td>
@@ -612,7 +1147,7 @@
       const code = prompt("Item Code (e.g., HVAC-REPAIR, GEN-PART):");
       if (!code) return;
       const title = prompt("Service / Item Title:");
-      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical):", "HVAC");
+      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical, Time):", "HVAC");
       const unitPrice = parseFloat(prompt("Standard Rate ($):", "100.00") || "0");
       const description = prompt("Description:");
 
@@ -658,25 +1193,36 @@
     // --- MANUALS & FORMULAS BASE VIEW ---
     function renderManualsView() {
       const isManager = appState.currentUser.role === 'manager';
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredKB = appState.knowledgeBase.filter(kb => 
+        kb.title.toLowerCase().includes(query) || 
+        kb.category.toLowerCase().includes(query) || 
+        kb.notes.toLowerCase().includes(query) || 
+        kb.addedBy.toLowerCase().includes(query)
+      );
 
       return `
         <div class="space-y-6">
-          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 class="font-bold text-white text-sm">Public Company Manuals & Technical Formulas</h3>
               <p class="text-xs text-slate-400 mt-1">Shared knowledge repository viewable by all team members</p>
             </div>
-            ${isManager ? `
-              <button onclick="openAddManualModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition">
-                <i class="fa-solid fa-file-circle-plus"></i> Upload Manual / Formula
-              </button>
-            ` : `
-              <span class="text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">View Only Mode</span>
-            `}
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <div class="relative flex-1 md:w-64">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+                <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search manuals..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
+              </div>
+              ${isManager ? `
+                <button onclick="openAddManualModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 transition flex-shrink-0">
+                  <i class="fa-solid fa-file-circle-plus"></i> Upload Manual
+                </button>
+              ` : ''}
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            ${appState.knowledgeBase.map(kb => `
+            ${filteredKB.map(kb => `
               <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
                 <div>
                   <div class="flex items-center justify-between mb-2">
@@ -710,7 +1256,7 @@
     function openAddManualModal() {
       const title = prompt("Enter Manual / Formula Title:");
       if (!title) return;
-      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical):", "HVAC");
+      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical, Time):", "HVAC");
       const fileType = prompt("File Type (PDF, DOCX, EXCEL, IMG):", "PDF");
       const notes = prompt("Enter Brief Description or Reference Notes:");
 
@@ -737,25 +1283,42 @@
 
     // --- WORK ORDERS & ESTIMATES VIEW ---
     function renderWorkOrdersView() {
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredWorkOrders = appState.workOrders.filter(wo => 
+        wo.id.toLowerCase().includes(query) || 
+        wo.customerName.toLowerCase().includes(query) || 
+        wo.equipmentName.toLowerCase().includes(query) || 
+        wo.trade.toLowerCase().includes(query) || 
+        (wo.techName && wo.techName.toLowerCase().includes(query)) ||
+        wo.status.toLowerCase().includes(query)
+      );
+
       return `
         <div class="space-y-6">
-          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h3 class="font-bold text-white text-sm">Work Orders, Estimates & Itemized Billing</h3>
-              <p class="text-xs text-slate-400 mt-1">Add price book line items directly to jobs</p>
+              <h3 class="font-bold text-white text-sm">Work Orders, Estimates & Technician Pay (Minutes & SPIFFs)</h3>
+              <p class="text-xs text-slate-400 mt-1">Manage line items with flat rates, tech pay minutes, and separate bonus SPIFFs</p>
+            </div>
+            <div class="relative w-full md:w-64">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+              <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search work orders..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            ${appState.workOrders.map(wo => {
+            ${filteredWorkOrders.map(wo => {
               const totalAmount = (wo.lineItems || []).reduce((acc, item) => acc + (item.total || 0), 0);
+              const totalMinutes = (wo.lineItems || []).reduce((acc, item) => acc + ((item.minutes || 0) * (item.qty || 1)), 0);
+              const totalSpiff = (wo.lineItems || []).reduce((acc, item) => acc + ((item.spiff || 0) * (item.qty || 1)), 0);
+
               return `
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
                   <div class="flex items-start justify-between border-b border-slate-800 pb-3">
                     <div>
                       <span class="font-mono font-bold text-red-500 text-sm">${wo.id}</span>
                       <h4 class="font-bold text-white text-base mt-1">${wo.customerName}</h4>
-                      <p class="text-xs text-slate-400">${wo.equipmentName}</p>
+                      <p class="text-xs text-slate-400">${wo.equipmentName} (${wo.techName || 'Unassigned'})</p>
                     </div>
                     <span class="px-2.5 py-1 rounded text-xs font-bold ${wo.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
                       ${wo.status}
@@ -764,24 +1327,33 @@
 
                   <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-                      <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-receipt text-emerald-400"></i> Itemized Estimate</span>
+                      <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-receipt text-emerald-400"></i> Itemized Billing & Tech Pay</span>
                       <button onclick="addLineItemToWO('${wo.id}')" class="text-[11px] bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded transition">
                         + Add Line Item
                       </button>
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-2 divide-y divide-slate-800/60">
                       ${(wo.lineItems || []).map(item => `
-                        <div class="flex items-center justify-between text-xs py-1 text-slate-300">
-                          <span>${item.title} (x${item.qty})</span>
-                          <span class="font-mono text-emerald-400 font-semibold">$${item.total.toFixed(2)}</span>
+                        <div class="pt-2 flex items-center justify-between text-xs text-slate-300">
+                          <div>
+                            <p class="font-bold text-white"><span class="font-mono text-amber-400">[${item.code || 'N/A'}]</span> ${item.title} (x${item.qty})</p>
+                            <p class="text-[10px] text-slate-400">Pay: <span class="text-amber-400 font-semibold">${item.minutes || 0} mins</span> | SPIFF: <span class="text-rose-400 font-semibold">$${(item.spiff || 0).toFixed(2)}</span></p>
+                          </div>
+                          <span class="font-mono text-emerald-400 font-semibold">$${(item.total || 0).toFixed(2)}</span>
                         </div>
                       `).join('')}
                     </div>
 
-                    <div class="pt-2 border-t border-slate-800 flex justify-between font-bold text-xs text-white">
-                      <span>Total Estimate:</span>
-                      <span class="font-mono text-emerald-400">$${totalAmount.toFixed(2)}</span>
+                    <div class="pt-3 border-t border-slate-800 space-y-1 text-xs">
+                      <div class="flex justify-between font-semibold text-slate-300">
+                        <span>Total Tech Pay Minutes:</span>
+                        <span class="font-mono text-amber-400">${totalMinutes} Mins</span>
+                      </div>
+                      <div class="flex justify-between font-semibold text-slate-300">
+                        <span>Total Tech SPIFF Bonus:</span>
+                        <span class="font-mono text-rose-400">$${totalSpiff.toFixed(2)}</span>                       </div>                       <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800">                         <span>Total Invoice Amount:</span>                         <span class="font-mono text-emerald-400">$${totalAmount.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -816,17 +1388,24 @@
       const wo = appState.workOrders.find(w => w.id === woId);
       if (!wo) return;
 
+      const code = prompt("Part Number / Item Code (e.g., FLT-2025, R410A):", "PART-001");
+      if (!code) return;
       const title = prompt("Line Item Title or Part Description:");
       if (!title) return;
       const qty = parseInt(prompt("Quantity:", "1") || "1");
-      const unitPrice = parseFloat(prompt("Unit Price ($):", "100.00") || "0");
+      const unitPrice = parseFloat(prompt("Unit Flat-Rate Price ($):", "100.00") || "0");
+      const minutes = parseInt(prompt("Tech Pay Minutes for this item:", "30") || "0");
+      const spiff = parseFloat(prompt("SPIFF Bonus Amount ($):", "0") || "0");
 
       if (!wo.lineItems) wo.lineItems = [];
       wo.lineItems.push({
         id: 'li-' + Date.now(),
+        code: code.toUpperCase(),
         title,
         qty: isNaN(qty) ? 1 : qty,
         unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
+        minutes: isNaN(minutes) ? 0 : minutes,
+        spiff: isNaN(spiff) ? 0 : spiff,
         total: (isNaN(qty) ? 1 : qty) * (isNaN(unitPrice) ? 0 : unitPrice)
       });
 
@@ -851,61 +1430,31 @@
       }
     }
 
-    // --- OTHER VIEWS ---
-    function renderCustomersView() {
-      const selectedCustomer = appState.customers.find(c => c.id === appState.selectedCustomerId) || appState.customers[0];
-      return `
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-full">
-            <h3 class="font-bold text-white text-sm mb-4">Parent Accounts</h3>
-            <div class="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
-              ${appState.customers.map(c => `
-                <div onclick="selectCustomer('${c.id}')" class="p-3 rounded-lg border cursor-pointer ${selectedCustomer && selectedCustomer.id === c.id ? 'bg-red-950/30 border-red-600/50' : 'bg-slate-900 border-slate-800/80'}">
-                  <h4 class="font-bold text-slate-100 text-sm">${c.name}</h4>
-                  <p class="text-xs text-slate-400"><i class="fa-solid fa-phone"></i> ${c.phone}</p>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          ${selectedCustomer ? `
-            <div class="lg:col-span-2 space-y-6 overflow-y-auto custom-scrollbar pr-1">
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
-                <h2 class="text-xl font-bold text-white">${selectedCustomer.name}</h2>
-                <p class="text-xs text-slate-400 mt-1">${selectedCustomer.address} \vert{}${selectedCustomer.phone}</p>
-              </div>
-
-              <div>
-                <h3 class="text-sm font-bold text-white mb-3">Equipment Sub-Accounts (${selectedCustomer.equipments.length})</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  ${selectedCustomer.equipments.map(eq => `
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">${eq.category}</span>
-                      <h4 class="font-bold text-white text-sm mt-2">${eq.name}</h4>
-                      <p class="text-xs text-slate-400">Model: ${eq.model} | S/N: ${eq.serial}</p>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    function selectCustomer(id) { appState.selectedCustomerId = id; saveAppState(); }
-
+    // --- MAINTENANCE TRACKER VIEW ---
     function renderMaintenanceView() {
       const allEquipments = appState.customers.flatMap(c => 
         c.equipments.map(e => ({ ...e, parentCustomer: c.name, parentCustomerId: c.id }))
       );
 
+      const query = (appState.searchTerm || '').toLowerCase();
+      const filteredEquipments = allEquipments.filter(eq => 
+        eq.parentCustomer.toLowerCase().includes(query) || 
+        eq.name.toLowerCase().includes(query) || 
+        eq.serial.toLowerCase().includes(query) || 
+        eq.category.toLowerCase().includes(query) || 
+        eq.nextMaintenance.toLowerCase().includes(query)
+      );
+
       return `
         <div class="space-y-6">
-          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 class="font-bold text-white text-sm">Preventative Maintenance Tracker</h3>
               <p class="text-xs text-slate-400 mt-1">Automatic maintenance tracking across HVAC, Plumbing, Gates & Generators</p>
+            </div>
+            <div class="relative w-full md:w-64">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-search"></i></span>
+              <input type="text" value="${appState.searchTerm || ''}" oninput="updateSearch(this.value)" placeholder="Search maintenance..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" />
             </div>
           </div>
 
@@ -920,7 +1469,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
-                ${allEquipments.map(eq => `
+                ${filteredEquipments.map(eq => `
                   <tr class="hover:bg-slate-900/50">
                     <td class="p-4 font-bold text-white">${eq.parentCustomer}</td>
                     <td class="p-4 font-medium">${eq.name} <span class="text-slate-500 font-mono">(${eq.serial})</span></td>
@@ -935,12 +1484,106 @@
       `;
     }
 
+    // --- MANAGER AUDIT LOG VIEW WITH FILTERS ---
     function renderLogsView() {
+      const filters = appState.auditFilter;
+      const query = (filters.search || '').toLowerCase();
+
+      const filteredLogs = appState.customerChangeLogs.filter(l => {
+        const matchesQuery = !query || 
+          l.user.toLowerCase().includes(query) || 
+          l.customerName.toLowerCase().includes(query) || 
+          l.action.toLowerCase().includes(query) || 
+          l.details.toLowerCase().includes(query);
+
+        let matchesUser = true;
+        if (filters.user === 'tech') {
+          matchesUser = l.user.includes('(TECHNICIAN)');
+        } else if (filters.user === 'office') {
+          matchesUser = l.user.includes('(MANAGER)') || l.user.includes('(CSR)') || l.user.includes('(DISPATCHER)');
+        }
+
+        let matchesCustomer = !filters.customer || l.customerId === filters.customer || l.customerName === filters.customer;
+        let matchesDate = true;
+        if (filters.date) {
+          matchesDate = l.timestamp.includes(filters.date) || l.timestamp.startsWith(filters.date);
+        }
+
+        return matchesQuery && matchesUser && matchesCustomer && matchesDate;
+      });
+
       return `
         <div class="space-y-6">
-          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800"><h3 class="font-bold text-white text-sm">Manager Audit Log</h3></div>
-          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-4">
-            ${appState.customerChangeLogs.map(l => `<p class="text-xs text-slate-300 border-b border-slate-800 py-2">${l.timestamp} -${l.user}: ${l.action} (${l.details})</p>`).join('')}
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-white text-sm">Manager Audit & Activity Log</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Filter system activity records by staff type, customer, date, or keywords</p>
+              </div>
+              <button onclick="resetAuditFilters()" class="text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg transition">
+                Reset Filters
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80">
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Search Keywords</label>
+                <input type="text" value="${filters.search}" oninput="updateAuditFilter('search', this.value)" placeholder="Search action, details..." class="w-full bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Staff Type</label>
+                <select onchange="updateAuditFilter('user', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500">
+                  <option value="">All Staff</option>
+                  <option value="office" ${filters.user === 'office' ? 'selected' : ''}>Office Staff (Manager/CSR/Dispatcher)</option>
+                  <option value="tech" ${filters.user === 'tech' ? 'selected' : ''}>Technicians</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Customer</label>
+                <select onchange="updateAuditFilter('customer', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500">
+                  <option value="">All Customers</option>
+                  ${appState.customers.map(c => `
+                    <option value="${c.name}" ${filters.customer === c.name ? 'selected' : ''}>${c.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">Date</label>
+                <input type="date" value="${filters.date}" onchange="updateAuditFilter('date', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="p-4">Timestamp</th>
+                  <th class="p-4">User</th>
+                  <th class="p-4">Customer</th>
+                  <th class="p-4">Action</th>
+                  <th class="p-4">Details</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${filteredLogs.length > 0 ? filteredLogs.map(l => `
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-4 font-mono text-slate-400 whitespace-nowrap">${l.timestamp}</td>
+                    <td class="p-4 font-semibold text-white whitespace-nowrap">${l.user}</td>
+                    <td class="p-4 text-slate-300 whitespace-nowrap">${l.customerName || 'N/A'}</td>
+                    <td class="p-4 font-bold text-red-400 whitespace-nowrap">${l.action}</td>
+                    <td class="p-4 text-slate-400">${l.details}</td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="5" class="p-6 text-center text-slate-500 italic">No audit logs found matching the selected filters.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
           </div>
         </div>
       `;
@@ -958,8 +1601,8 @@
 
     function openAddTeamMemberModal() {
       const name = prompt("Enter Name:");
-      const role = prompt("Role (manager, csr, dispatcher, technician):", "csr");
-      if (name) { appState.users.push({ id: 'u-' + Date.now(), name, email: `${name}@reliance.com`, password: '123', role: role.toLowerCase() }); saveAppState(); }
+      const role = prompt("Role (manager, csr, dispatcher, technician, parts):", "parts");
+      if (name) { appState.users.push({ id: 'u-' + Date.now(), name, email: `${name.toLowerCase().replace(/\s+/g, '')}@reliance.com`, password: '123', role: role.toLowerCase() }); saveAppState(); }
     }
 
     renderApp();
