@@ -116,9 +116,8 @@
       csrSlots: [
         { time: '08:00 AM - 10:00 AM', csr1: { booked: true, jobType: 'HVAC Routine', customer: 'Apex Commercial Plaza' }, csr2: { booked: false }, csr3: { booked: true, jobType: 'Generator Diagnostic', customer: 'Eleanor Vance' } },
         { time: '10:00 AM - 12:00 PM', csr1: { booked: false }, csr2: { booked: true, jobType: 'Gate Opener Repair', customer: 'Summit Logistics' }, csr3: { booked: false } },
-        { time: '12:00 PM - 02:00 PM', csr1: { booked: true, jobType: 'Water Heater Flush', customer: 'Eleanor Vance' }, csr2: { booked: false }, csr3: { booked: false } },
-        { time: '02:00 PM - 04:00 PM', csr1: { booked: false }, csr2: { booked: false }, csr3: { booked: true, jobType: 'Electrical Panel Inspection', customer: 'Oakridge Apts' } }
-        { time: '04:00 PM - 06:00 PM', csr1: { booked: false }, csr2: { booked: false }, csr3: { booked: false } },
+        { time: '01:00 PM - 03:00 PM', csr1: { booked: true, jobType: 'Water Heater Flush', customer: 'Eleanor Vance' }, csr2: { booked: false }, csr3: { booked: false } },
+        { time: '03:00 PM - 05:00 PM', csr1: { booked: false }, csr2: { booked: false }, csr3: { booked: true, jobType: 'Electrical Panel Inspection', customer: 'Oakridge Apts' } }
       ],
 
       workOrders: [
@@ -841,9 +840,9 @@
               <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
                 <tr>
                   <th class="p-4">Time Window</th>
-                  <th class="p-4">Slot 1</th>
-                  <th class="p-4">Slot 2</th>
-                  <th class="p-4">Slot 3</th>
+                  <th class="p-4">CSR Station 1</th>
+                  <th class="p-4">CSR Station 2</th>
+                  <th class="p-4">CSR Station 3</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
@@ -1466,7 +1465,7 @@
                   <th class="p-4">Customer</th>
                   <th class="p-4">Equipment Sub-Account</th>
                   <th class="p-4">Category</th>
-                  <th class="p-4">Next Bill Cycle</th>
+                  <th class="p-4">Next Due Date</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
