@@ -1036,7 +1036,7 @@
       if (customerName === null) return;
       const equipmentName = prompt("Edit Equipment / Asset Name:", wo.equipmentName);
       if (equipmentName === null) return;
-      const trade = prompt("Edit Trade Category (HVAC, Plumbing, Electrical, Gates, Generators, Time):", wo.trade);
+      const trade = prompt("Edit Trade Category (HVAC, Plumbing, Electrical, Gates, Generators):", wo.trade);
       if (trade === null) return;
       const description = prompt("Edit Job Description / Notes:", wo.description);
       if (description === null) return;
@@ -1053,7 +1053,7 @@
       const customerName = prompt("Enter Customer Name:");
       if (!customerName) return;
       const equipmentName = prompt("Enter Equipment / Asset Name:", "General Service Call");
-      const trade = prompt("Trade Category (HVAC, Plumbing, Electrical, Gates, Generators, Time):", "HVAC");
+      const trade = prompt("Trade Category (HVAC, Plumbing, Electrical, Gates, Generators):", "HVAC");
       const description = prompt("Job Description:", "Scheduled service ticket.");
 
       const newWO = {
@@ -1147,7 +1147,7 @@
       const code = prompt("Item Code (e.g., HVAC-REPAIR, GEN-PART):");
       if (!code) return;
       const title = prompt("Service / Item Title:");
-      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical, Time):", "HVAC");
+      const category = prompt("Trade Category (HVAC, Generators, Plumbing, Gates, Electrical):", "HVAC");
       const unitPrice = parseFloat(prompt("Standard Rate ($):", "100.00") || "0");
       const description = prompt("Description:");
 
@@ -1465,7 +1465,7 @@
                   <th class="p-4">Customer</th>
                   <th class="p-4">Equipment Sub-Account</th>
                   <th class="p-4">Category</th>
-                  <th class="p-4">Next Due Date</th>
+                  <th class="p-4">Next Bill Date</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
