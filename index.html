@@ -9,28 +9,18 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #1f2937;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #4b5563;
-      border-radius: 3px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #6b7280;
-    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans antialiased h-screen overflow-hidden">
   <div id="app" class="h-full flex flex-col"></div>
 
   <script>
-    // --- INITIAL APP STATE ---
-    const defaultState = {
+    // --- INITIAL STATE ---
+    let appState = {
       currentUser: null,
       users: [
         { id: 'u1', name: 'Samuel Corson', email: 'manager@reliance.com', password: 'admin123', role: 'manager' },
@@ -44,31 +34,27 @@
       currentView: 'dashboard',
       selectedCustomerId: null,
       searchTerm: '',
-      // Audit Log Filters
+      // Audit Log Filters state
       auditLogRole: 'ALL',
-      // Tech Specs
+      date: new Date().toISOString().split('T')[0],
       trades: ['HVAC', 'Gates', 'Generator', 'Plumbing', 'Electrical'],
       techStatuses: ['In Field', 'Available', 'On Break'],
-      // Contacts & Directory
       contacts: [
         { id: 'c1', name: 'Lowe Commercial', phone: '(800) 532-3314', address: '800 E Beaty St, Davidson, NC 28036', type: 'Vendor' },
         { id: 'c2', name: 'LiftMaster Tech Support', phone: '(800) 528-2806', address: '300 Windsor Dr, Oak Brook, IL 60523', type: 'Support' }
       ],
-      // Shared Knowledge Base
       knowledgeBase: [
-        { id: 'kb1', title: 'Rooftop AHU Service Manual', category: 'HVAC', fileType: 'PDF', date: '2024-01-10', notes: 'Includes refrigerant pressures & wiring diagrams.' },
-        { id: 'kb2', title: 'Diagnostic & Voltage Formulas', category: 'Electrical', fileType: 'DOCX', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing.' },
-        { id: 'kb3', title: 'Barrier Loop Wire Installation Guidance', category: 'Gates', fileType: 'PDF', date: '2024-02-01', notes: 'Induction loops and keypad access wiring.' }
+        { id: 'kb1', title: 'Rooftop AHU Service Manual', category: 'HVAC', fileType: 'PDF', url: '#', date: '2024-01-10', notes: 'Includes refrigerant pressures & wiring diagrams.' },
+        { id: 'kb2', title: 'Diagnostic & Voltage Formulas', category: 'Electrical', fileType: 'DOCX', url: '#', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing.' },
+        { id: 'kb3', title: 'Barrier Loop Wire Guidance', category: 'Gates', fileType: 'PDF', url: '#', date: '2024-02-01', notes: 'Induction loops and keypad access wiring.' }
       ],
-      // Company Price Book
       priceBook: [
-        { code: 'HVAC-PM-4', title: 'Semi-Annual HVAC Tune-Up', rate: 150.00, description: 'Filter replacement, coil inspection, and electrical check.' },
-        { code: 'GEN-DIAG6', title: 'Generator Test & Run System Inspection', rate: 175.00, description: 'Transfer switch testing & battery check.' },
-        { code: 'PLM-FLUSH-3', title: 'Tankless Water Heater Flush', rate: 220.00, description: 'Descaling solution flush to remove mineral deposits.' },
-        { code: 'GATE-ROUT6', title: 'Automatic Gate Arm Lube & Alignment', rate: 125.00, description: 'Re-align gate tracks, grease hinges, verify safety sensors.' },
-        { code: 'ELE-INSP6', title: '200A Electrical Panel Inspection', rate: 200.00, description: 'Thermal camera hot spot check and breaker fault verification.' }
+        { code: 'HVAC-PM-4', title: 'Semi-Annual Tune-Up', rate: 150.00, description: 'Filter replacement, coil inspection, check electrical.' },
+        { code: 'GEN-DIAG6', title: 'Test & System Run Inspection', rate: 175.00, description: 'Transfer switch test and battery check.' },
+        { code: 'PLM-FLUSH-3', title: 'Tankless Flush', rate: 220.00, description: 'Flush with descaling solution to remove mineral deposits.' },
+        { code: 'GATE-ROUT6', title: 'Automatic Gate Arm Lube & Align', rate: 125.00, description: 'Re-align gate tracks, safety sensors, grease mechanisms.' },
+        { code: 'ELE-INSP6', title: '200A Electrical Panel Inspection', rate: 200.00, description: 'Thermal camera hot spot check & fault verification.' }
       ],
-      // Customers & Assets
       customers: [
         {
           id: 'cust1',
@@ -90,11 +76,10 @@
           email: 'eleanor@birchwood.org',
           address: '1042 Birchwood Lane',
           equipment: [
-            { id: 'eq3', name: 'Rinnai Tankless Water Heater', model: 'RU199iN', serial: 'RIN-5542E', installedDate: '2022-05-26', lastExtMaint: 'Flush Required Annually' }
+            { id: 'eq3', name: 'Rinnai Tankless Water Heater', model: 'RU199iN', serial: 'RIN-5542E', installedDate: '2022-05-26', lastExtMaint: 'Annual Flush Due' }
           ]
         }
       ],
-      // Work Orders & Tickets
       workOrders: [
         {
           id: 'WO-88216K',
@@ -103,58 +88,55 @@
           status: 'In Progress',
           type: 'Preventative Maintenance',
           trade: 'HVAC',
-          description: 'Routine HVAC coil cleaning and air filter maintenance.',
+          description: 'Routine maintenance and filter replacement.',
           scheduledDate: '2024-04-02',
           totalAmount: 350.00,
           spiff: 15.00,
           lineItems: [
-            { code: 'FLT-2025', description: 'Heavy Duty Air Filter (3 Pack)', qty: 1, unitPrice: 45.00, spiff: 5.00 },
+            { code: 'FLT-2025', description: 'Heavy Duty Air Filters (3 Pack)', qty: 1, unitPrice: 45.00, spiff: 5.00 },
             { code: 'R410A-CYL', description: 'Refrigerant Cylinder Charge', qty: 2, unitPrice: 152.50, spiff: 10.00 }
           ],
           activityLog: [
-            { timestamp: '2024-04-02 08:15', user: 'Nathan Libraty', notes: 'Arrived on site. Commenced HVAC air filter task.' },
-            { timestamp: '2024-04-02 09:12', user: 'Nathan Libraty', notes: 'Updated status from Assigned to In Progress.' }
+            { timestamp: '2024-04-02 08:15', user: 'Nathan Libraty', notes: 'Arrived on site.' },
+            { timestamp: '2024-04-02 09:12', user: 'Nathan Libraty', notes: 'Updated status to In Progress.' }
           ]
         }
       ],
-      // Audit Logs
       auditLog: [
-        { id: 'al1', timestamp: '2024-04-02 08:00', user: 'Samuel Corson', role: 'manager', action: 'Assigned Work Order WO-88216K to Nathan Libraty.' },
-        { id: 'al2', timestamp: '2024-04-02 08:15', user: 'Nathan Libraty', role: 'tech', action: 'Clocked in at site Apex Plaza.' }
+        { id: 'al1', timestamp: '2024-04-02 08:00', user: 'Samuel Corson', role: 'manager', action: 'Assigned WO-88216K to Nathan Libraty.' }
       ]
     };
 
-    // State Initialization with localStorage Backup
-    function loadState() {
-      const saved = localStorage.getItem('_rc_crm_state_v10');
-      return saved ? JSON.parse(saved) : defaultState;
+    // State Management via LocalStorage
+    function loadAppState() {
+      const saved = localStorage.getItem('_crm_state_v10');
+      return saved ? JSON.parse(saved) : appState;
     }
 
-    function saveState() {
-      localStorage.setItem('_rc_crm_state_v10', JSON.stringify(appState));
+    function saveAppState() {
+      localStorage.setItem('_crm_state_v10', JSON.stringify(appState));
     }
 
-    let appState = loadState();
+    appState = loadAppState();
 
-    // --- MAIN RENDER ROUTINER ---
+    // --- MAIN RENDERER ---
     function renderApp() {
       const root = document.getElementById('app');
       if (!appState.currentUser) {
         root.innerHTML = renderLoginScreen();
-        return;
-      }
-
-      root.innerHTML = `
-        <div class="flex h-full overflow-hidden">
-          ${renderSidebar()}
-          <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
-            ${renderHeader()}
-            <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              ${renderMainView()}
-            </main>
+      } else {
+        root.innerHTML = `
+          <div class="flex h-full overflow-hidden">
+            ${renderSidebar()}
+            <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
+              ${renderHeader()}
+              <main class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                ${renderMainContent()}
+              </main>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     // --- LOGIN SCREEN ---
@@ -165,27 +147,22 @@
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-700"></div>
             <div class="flex items-center gap-3 mb-6">
               <div class="bg-red-600/30 p-3 rounded-xl border border-red-500/30">
-                <i class="fa-solid font-bold text-2xl text-red-500">R</i>
+                <i class="fa-solid font-extrabold text-2xl text-white">R</i>
               </div>
               <div>
-                <h1 class="text-xl font-extrabold tracking-tight text-white">RELIANCE CONNECTIONS</h1>
-                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">CRM & Dispatch System</p>
+                <h1 class="text-xl font-extrabold tracking-tight text-white ml-0.5">RELIANCE CONNECTIONS</h1>
+                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-1">CRM System</p>
               </div>
             </div>
-            
             <form onsubmit="handleLogin(event)" class="space-y-5">
               <div>
                 <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Select User Account</label>
-                <select id="loginUserSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-red-500 transition">
+                <select id="userSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-red-500">
                   ${appState.users.map(u => `<option value="${u.id}">${u.name} (${u.role.toUpperCase()})</option>`).join('')}
                 </select>
               </div>
-              <div>
-                <label class="block text-xs uppercase text-slate-400 font-semibold mb-2">Password</label>
-                <input type="password" value="admin123" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-red-500 transition" required />
-              </div>
-              <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-right-to-bracket"></i> Sign In to CRM
+              <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
               </button>
             </form>
           </div>
@@ -195,52 +172,50 @@
 
     function handleLogin(e) {
       e.preventDefault();
-      const userId = document.getElementById('loginUserSelect').value;
-      appState.currentUser = appState.users.find(u => u.id === userId);
-      saveState();
+      const id = document.getElementById('userSelect').value;
+      appState.currentUser = appState.users.find(u => u.id === id);
+      saveAppState();
       renderApp();
     }
 
     function handleLogout() {
       appState.currentUser = null;
-      saveState();
+      saveAppState();
       renderApp();
     }
 
-    // --- NAVIGATION & SIDEBAR ---
+    // --- SIDEBAR & HEADER ---
     function renderSidebar() {
-      const items = [
-        { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
-        { id: 'multi-dispatch', label: 'Multi-Dispatch Board', icon: 'fa-boxes-stacked' },
-        { id: 'work-orders', label: 'Work Orders & Estimates', icon: 'fa-screwdriver-wrench' },
-        { id: 'company-pricebook', label: 'Price Book', icon: 'fa-clipboard-list' },
-        { id: 'knowledge-base', label: 'Manuals & Formulas', icon: 'fa-folder-open' },
-        { id: 'customers', label: 'Customers & Asset Tracker', icon: 'fa-building' },
-        { id: 'contacts', label: 'Contacts Directory', icon: 'fa-address-book' },
-        { id: 'audit-log', label: 'Audit Log & History', icon: 'fa-clock-rotate-left' }
+      const views = [
+        { id: 'dashboard', name: 'Dashboard', icon: 'fa-chart-pie' },
+        { id: 'multi-dispatch', name: 'Multi-Dispatch', icon: 'fa-boxes-stacked' },
+        { id: 'work-orders', name: 'Work Orders & Estimates', icon: 'fa-screwdriver-wrench' },
+        { id: 'company-pricebook', name: 'Price Book', icon: 'fa-clipboard-list' },
+        { id: 'knowledge-base', name: 'Manuals & Formulas', icon: 'fa-folder-open' },
+        { id: 'customers', name: 'Customers & Assets', icon: 'fa-building' },
+        { id: 'contacts', name: 'Contacts Directory', icon: 'fa-address-book' },
+        { id: 'audit-log', name: 'Activity Log', icon: 'fa-clock-rotate-left' }
       ];
 
       return `
         <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col">
           <div class="p-5 border-b border-slate-800 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center font-black text-lg shadow-lg">RC</div>
+            <div class="w-9 h-9 rounded-lg bg-red-600 flex-shrink-0 flex items-center justify-center font-black">RC</div>
             <div class="truncate">
               <h2 class="font-bold text-sm text-slate-100 truncate">Reliance Connections</h2>
-              <p class="text-[10px] text-slate-500 capitalize font-medium">${appState.currentUser.role} Portal</p>
+              <p class="text-[10px] text-slate-500 capitalize font-semibold">${appState.currentUser.role}</p>
             </div>
           </div>
-          <nav class="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
-            ${items.map(item => `
-              <button onclick="switchView('${item.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${appState.currentView === item.id ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}">
-                <i class="fa-solid ${item.icon} w-5 text-center"></i>
-                <span>${item.label}</span>
+          <nav class="flex-1 p-3 space-y-1">
+            ${views.map(v => `
+              <button onclick="switchView('${v.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${appState.currentView === v.id ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-slate-400 hover:bg-slate-900'}">
+                <i class="fa-solid ${v.icon} w-5 text-center"></i>
+                <span>${v.name}</span>
               </button>
             `).join('')}
           </nav>
           <div class="p-4 border-t border-slate-800">
-            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-semibold border border-slate-800 transition">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-            </button>
+            <button onclick="handleLogout()" class="w-full py-2 bg-slate-900 text-slate-400 hover:text-white rounded-lg text-xs font-semibold border border-slate-800">Sign Out</button>
           </div>
         </aside>
       `;
@@ -248,258 +223,225 @@
 
     function renderHeader() {
       return `
-        <header class="bg-slate-950/80 backdrop-blur border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-          <div class="flex items-center gap-4 flex-1 max-w-md">
-            <div class="relative w-full">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-              <input type="text" placeholder="Search system records..." value="${appState.searchTerm}" oninput="handleSearch(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500" />
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <div class="text-sm font-bold text-slate-200">${appState.currentUser.name}</div>
-              <div class="text-xs text-slate-500">${appState.currentUser.email}</div>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-red-500">
-              ${appState.currentUser.name.split(' ').map(n=>n[0]).join('')}
-            </div>
-          </div>
+        <header class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+          <input type="text" placeholder="Search..." value="${appState.searchTerm}" oninput="handleSearch(this.value)" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-sm w-64 text-slate-200 focus:outline-none focus:border-red-500" />
+          <div class="text-sm font-bold text-slate-200">${appState.currentUser.name}</div>
         </header>
       `;
     }
 
     function switchView(view) {
       appState.currentView = view;
-      saveState();
+      saveAppState();
       renderApp();
     }
 
-    function handleSearch(term) {
-      appState.searchTerm = term;
-      saveState();
+    function handleSearch(val) {
+      appState.searchTerm = val;
+      saveAppState();
       renderApp();
     }
 
-    // --- MAIN ROUTING PANELS ---
-    function renderMainView() {
+    // --- MAIN RENDER SWITCH ---
+    function renderMainContent() {
       switch (appState.currentView) {
-        case 'dashboard': return renderDashboardView();
-        case 'multi-dispatch': return renderDispatchView();
-        case 'work-orders': return renderWorkOrdersView();
-        case 'company-pricebook': return renderPriceBookView();
-        case 'knowledge-base': return renderKnowledgeBaseView();
-        case 'customers': return renderCustomersView();
-        case 'contacts': return renderContactsView();
-        case 'audit-log': return renderAuditLogView();
-        default: return renderDashboardView();
-      }
-    }
-
-    // --- VIEWS ---
-
-    // 1. DASHBOARD VIEW
-    function renderDashboardView() {
-      const activeWO = appState.workOrders.filter(w => w.status !== 'Completed').length;
-      const totalRevenue = appState.workOrders.reduce((acc, c) => acc + (c.totalAmount || 0), 0);
-      const totalSpiffs = appState.workOrders.reduce((acc, c) => acc + (c.spiff || 0), 0);
-
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xl font-bold text-slate-100">Welcome back, ${appState.currentUser.name}</h3>
-            <span class="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-full font-semibold">Active Dispatch Active</span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl">
-              <div class="text-slate-500 text-xs font-semibold uppercase">Active Work Orders</div>
-              <div class="text-2xl font-black text-slate-100 mt-1">${activeWO}</div>
-            </div>
-            <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl">
-              <div class="text-slate-500 text-xs font-semibold uppercase">Total Pipeline Revenue</div>
-              <div class="text-2xl font-black text-emerald-400 mt-1">$${totalRevenue.toFixed(2)}</div>
-            </div>
-            <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl">
-              <div class="text-slate-500 text-xs font-semibold uppercase">Awarded Spiffs</div>
-              <div class="text-2xl font-black text-amber-400 mt-1">$${totalSpiffs.toFixed(2)}</div>
-            </div>
-            <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl">
-              <div class="text-slate-500 text-xs font-semibold uppercase">Total Customers</div>
-              <div class="text-2xl font-black text-blue-400 mt-1">${appState.customers.length}</div>
-            </div>
-          </div>
-
-          <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
-            <h4 class="font-bold text-slate-200 mb-4">Recent Active Service Tickets</h4>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm">
-                <thead class="text-xs text-slate-500 uppercase border-b border-slate-800">
-                  <tr>
-                    <th class="pb-3">Ticket ID</th>
-                    <th class="pb-3">Trade</th>
-                    <th class="pb-3">Status</th>
-                    <th class="pb-3">Amount</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                  ${appState.workOrders.map(wo => `
-                    <tr>
-                      <td class="py-3 font-mono font-bold text-slate-200">${wo.id}</td>
-                      <td class="py-3">${wo.trade}</td>
-                      <td class="py-3"><span class="px-2 py-0.5 bg-slate-800 text-slate-300 text-xs rounded">${wo.status}</span></td> <td class="py-3 font-mono text-emerald-400">$${wo.totalAmount.toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. DISPATCH BOARD VIEW
-    function renderDispatchView() {
-      const techs = appState.users.filter(u => u.role === 'tech');
-
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100">Multi-Dispatch Matrix Board</h3>
-              <p class="text-xs text-slate-400">Assign & schedule field technicians across live tickets.</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            ${techs.map(tech => {
-              const assignedWO = appState.workOrders.filter(w => w.techId === tech.id);
-              return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col">
-                  <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-                    <div>
-                      <div class="font-bold text-slate-200">${tech.name}</div>
-                      <div class="text-xs text-slate-500">${tech.email}</div>
-                    </div>
-                    <span class="px-2 py-0.5 text-xs rounded font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Available</span>
-                  </div>
-
-                  <div class="flex-1 space-y-3">
-                    ${assignedWO.length === 0 ? '<div class="text-xs text-slate-500 italic py-4 text-center">No active work orders assigned</div>' : ''}
-                    ${assignedWO.map(wo => `
-                      <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-2">
-                        <div class="flex justify-between items-center text-xs">
-                          <span class="font-mono font-bold text-red-400">${wo.id}</span>
-                          <span class="px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px]">${wo.status}</span>
-                        </div>
-                        <div class="text-xs font-semibold text-slate-200">${wo.description}</div>
-                        <div class="text-[11px] text-slate-400"><i class="fa-solid fa-wrench mr-1"></i> ${wo.trade}</div>
-                      </div>
-                    `).join('')}
-                  </div>
+        case 'dashboard':
+          const completedCount = appState.workOrders.filter(w => w.status !== 'Completed').length;
+          const totalAmount = appState.workOrders.reduce((acc, c) => acc + (c.totalAmount || 0), 0);
+          const totalSpiffs = appState.workOrders.reduce((acc, c) => acc + (c.spiff || 0), 0);
+          return `
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold">Welcome, ${appState.currentUser.name}</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl">
+                  <div class="text-xs text-slate-500 uppercase font-semibold">Active Work Orders</div>
+                  <div class="text-2xl font-black mt-1">${completedCount}</div>
                 </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. WORK ORDERS VIEW
-    function renderWorkOrdersView() {
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100">Work Orders & Estimates</h3>
-              <p class="text-xs text-slate-400">Manage field tickets, line items, and spiff compensation.</p>
+                <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl">
+                  <div class="text-xs text-slate-500 uppercase font-semibold">Pipeline Revenue</div>
+                  <div class="text-2xl font-black text-emerald-400 mt-1">$${totalAmount.toFixed(2)}</div>
+                </div>
+                <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl">
+                  <div class="text-xs text-slate-500 uppercase font-semibold">SPIFF Bonuses Awarded</div>
+                  <div class="text-2xl font-black text-amber-400 mt-1">$${totalSpiffs.toFixed(2)}</div>
+                </div>
+              </div>
             </div>
-            <button onclick="openCreateWOModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> New Ticket
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            ${appState.workOrders.map(wo => {
-              const cust = appState.customers.find(c => c.id === wo.customerId) || {};
-              const tech = appState.users.find(u => u.id === wo.techId) || {};
-              return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-                  <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 gap-2">
-                    <div>
-                      <div class="flex items-center gap-3">
-                        <span class="text-lg font-mono font-extrabold text-red-500">${wo.id}</span>
-                        <span class="px-2.5 py-0.5 text-xs bg-slate-800 text-slate-300 rounded-full font-medium">${wo.status}</span> <span class="px-2.5 py-0.5 text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-medium">Spiff Earned: $${wo.spiff.toFixed(2)}</span>
-                      </div>
-                      <div class="text-xs text-slate-400 mt-1">Customer: <strong class="text-slate-200">${cust.name || 'Unassigned'}</strong> | Tech: <strong class="text-slate-200">${tech.name || 'Unassigned'}</strong></div>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-xs text-slate-500">Scheduled Date</div>
-                      <div class="text-sm font-semibold text-slate-200">${wo.scheduledDate}</div>
-                    </div>
-                  </div>
-
-                  <p class="text-sm text-slate-300">${wo.description}</p>
-
-                  <!-- Line Items -->
-                  <div class="bg-slate-900 border border-slate-800/80 rounded-lg p-3">
-                    <div class="text-xs font-semibold uppercase text-slate-400 mb-2">Itemized Materials & Labor</div>
-                    <div class="space-y-1">
-                      ${wo.lineItems.map(item => `
-                        <div class="flex justify-between text-xs text-slate-300 py-1 border-b border-slate-800/40 last:border-0">
-                          <span>${item.code} - ${item.description} (x${item.qty})</span>
-                          <span class="font-mono text-emerald-400">$${(item.unitPrice * item.qty).toFixed(2)}</span>
+          `;
+        case 'multi-dispatch':
+          return `
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold">Multi-Dispatch Matrix</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${appState.users.filter(u => u.role === 'tech').map(tech => `
+                  <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                    <div class="font-bold border-b border-slate-800 pb-2 mb-2">${tech.name}</div>
+                    <div class="space-y-2">
+                      ${appState.workOrders.filter(w => w.techId === tech.id).map(wo => `
+                        <div class="bg-slate-900 p-2 rounded text-xs border border-slate-800">
+                          <div class="font-mono font-bold text-red-400">${wo.id}</div>
+                          <div>${wo.description}</div>
                         </div>
-                      `).join('')}
-                    </div>
-                    <div class="flex justify-between text-xs font-bold text-slate-100 pt-3 border-t border-slate-800 mt-2">
-                      <span>Total Invoice Amount</span>
-                      <span class="font-mono text-emerald-400">$${wo.totalAmount.toFixed(2)}</span>
+                      `).join('') || '<div class="text-xs text-slate-500 italic">No assigned orders</div>'}
                     </div>
                   </div>
-
-                  <!-- Actions & Status Updates -->
-                  <div class="flex items-center justify-between pt-2">
-                    <div class="flex items-center gap-2">
-                      <label class="text-xs text-slate-400">Update Status:</label>
-                      <select onchange="updateWOStatus('${wo.id}', this.value)" class="bg-slate-900 border border-slate-800 text-xs rounded px-2 py-1 text-slate-300">
+                `).join('')}
+              </div>
+            </div>
+          `;
+        case 'work-orders':
+          return `
+            <div class="space-y-6">
+              <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">Work Orders & Estimates</h3>
+                <button onclick="openCreateWOModal()" class="bg-red-600 text-white text-xs px-3 py-2 rounded font-semibold">+ New WO</button>
+              </div>
+              <div class="space-y-4">
+                ${appState.workOrders.map(wo => `
+                  <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                      <span class="font-mono font-bold text-red-500">${wo.id}</span>
+                      <span class="text-xs bg-slate-800 px-2 py-0.5 rounded">${wo.status}</span>
+                    </div>
+                    <p class="text-sm text-slate-300">${wo.description}</p>
+                    <div class="flex justify-between text-xs text-slate-400">
+                      <span>Total: <strong class="text-emerald-400">$${wo.totalAmount.toFixed(2)}</strong></span> <span>Spiff: <strong class="text-amber-400">$${wo.spiff.toFixed(2)}</strong></span>
+                    </div>
+                    <div>
+                      <label class="text-[10px] text-slate-500 uppercase font-semibold mb-1 block">Update Status</label>
+                      <select onchange="updateWO('${wo.id}', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs">
                         ${['Unassigned', 'Dispatched', 'In Progress', 'Completed'].map(s => `<option value="${s}" ${wo.status === s ? 'selected' : ''}>${s}</option>`).join('')}
                       </select>
                     </div>
-                    <button onclick="addWOActivityLog('${wo.id}')" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1">
-                      <i class="fa-solid fa-comment-medical"></i> Add Site Note
-                    </button>
                   </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
+                `).join('')}
+              </div>
+            </div>
+          `;
+        case 'company-pricebook':
+          return `
+            <div class="space-y-6">
+              <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">Standard Company Price Book</h3>
+                <button onclick="addPriceBookItem()" class="bg-red-600 text-white text-xs px-3 py-2 rounded font-semibold">+ Add Code</button>
+              </div>
+              <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                  <thead class="bg-slate-900 text-xs text-slate-400 uppercase">
+                    <tr><th class="p-3">Code</th><th class="p-3">Title</th><th class="p-3 text-right">Rate</th></tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800">
+                    ${appState.priceBook.map(pb => `
+                      <tr>
+                        <td class="p-3 font-mono text-red-400 font-bold">${pb.code}</td>
+                        <td class="p-3">${pb.title}</td> <td class="p-3 text-right font-mono text-emerald-400">$${pb.rate.toFixed(2)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        case 'knowledge-base':
+          return `
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold">Manuals & Formulas Base</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${appState.knowledgeBase.map(kb => `
+                  <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                    <div class="text-xs text-slate-500 font-mono">${kb.fileType} -${kb.category}</div>
+                    <h4 class="font-bold text-slate-200 mt-1">${kb.title}</h4>
+                    <p class="text-xs text-slate-400 mt-2">${kb.notes}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        case 'customers':
+          return `
+            <div class="space-y-6">
+              <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">Customers & Equipment</h3>
+                <button onclick="addCustomer()" class="bg-red-600 text-white text-xs px-3 py-2 rounded font-semibold">+ Add Customer</button>
+              </div>
+              <div class="space-y-4">
+                ${appState.customers.map(c => `
+                  <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                    <h4 class="font-bold text-slate-100">${c.name}</h4>
+                    <p class="text-xs text-slate-400 mb-2">${c.address} -${c.phone}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                      ${c.equipment.map(e => `
+                        <div class="bg-slate-900 p-2 rounded text-xs border border-slate-800">
+                          <div class="font-semibold text-slate-200">${e.name}</div>
+                          <div class="text-slate-500">Model: ${e.model} | S/N: ${e.serial}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        case 'contacts':
+          return `
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold">Contacts Directory</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${appState.contacts.map(c => `
+                  <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                    <span class="text-[10px] bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase font-bold">${c.type}</span>
+                    <h4 class="font-bold text-slate-200 mt-2">${c.name}</h4>
+                    <div class="text-xs text-slate-400 mt-1">${c.phone}</div>
+                    <div class="text-xs text-slate-500">${c.address}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        case 'audit-log':
+          return `
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold">Audit Log</h3>
+              <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-900 text-slate-400 uppercase">
+                    <tr><th class="p-3">Time</th><th class="p-3">User</th><th class="p-3">Action</th></tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800">
+                    ${appState.auditLog.map(al => `
+                      <tr>
+                        <td class="p-3 font-mono text-slate-500">${al.timestamp}</td>
+                        <td class="p-3 font-semibold text-slate-200">${al.user}</td>
+                        <td class="p-3 text-slate-300">${al.action}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        default:
+          return `<div>Select a view from the sidebar</div>`;
+      }
     }
 
-    function updateWOStatus(woId, newStatus) {
+    // Modal Actions
+    function updateWO(woId, val) {
       const wo = appState.workOrders.find(w => w.id === woId);
       if (wo) {
-        wo.status = newStatus;
-        wo.activityLog.push({
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          user: appState.currentUser.name,
-          notes: `Updated status to ${newStatus}`
-        });
-        saveState();
+        wo.status = val;
+        saveAppState();
         renderApp();
       }
     }
 
     function openCreateWOModal() {
-      const id = 'WO-' + Math.floor(1000 + Math.random() * 9000);
-      const desc = prompt("Enter Work Order / Service Call Description:", "Routine Diagnostics and Inspection");
+      const desc = prompt("Enter Service Description:");
       if (!desc) return;
-
-      const newWO = {
-        id: id,
-        customerId: appState.customers[0]?.id || '',
-        techId: appState.users.find(u => u.role === 'tech')?.id || '',
+      appState.workOrders.push({
+        id: 'WO-' + Math.floor(1000 + Math.random() * 9000),
+        customerId: 'cust1',
+        techId: 'u4',
         status: 'Dispatched',
         type: 'Service Call',
         trade: 'HVAC',
@@ -507,277 +449,39 @@
         scheduledDate: new Date().toISOString().split('T')[0],
         totalAmount: 150.00,
         spiff: 10.00,
-        lineItems: [{ code: 'HVAC-PM-4', description: 'Standard Diagnostic Check', qty: 1, unitPrice: 150.00, spiff: 10.00 }],
-        activityLog: [{ timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16), user: appState.currentUser.name, notes: 'Ticket Created.' }]
-      };
-
-      appState.workOrders.push(newWO);
-      saveState();
+        lineItems: [],
+        activityLog: []
+      });
+      saveAppState();
       renderApp();
-    }
-
-    function addWOActivityLog(woId) {
-      const note = prompt("Enter note for site log:");
-      if (!note) return;
-      const wo = appState.workOrders.find(w => w.id === woId);
-      if (wo) {
-        wo.activityLog.push({
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          user: appState.currentUser.name,
-          notes: note
-        });
-        saveState();
-        renderApp();
-      }
-    }
-
-    // 4. PRICE BOOK VIEW
-    function renderPriceBookView() {
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100">Standard Company Price Book</h3>
-              <p class="text-xs text-slate-400">Flat-rate pricing rules, diagnostics, and routine rates.</p>
-            </div>
-            <button onclick="addPriceBookItem()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> Add Item
-            </button>
-          </div>
-
-          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-900 text-xs text-slate-400 uppercase border-b border-slate-800">
-                <tr>
-                  <th class="p-4">Item Code</th>
-                  <th class="p-4">Title</th>
-                  <th class="p-4">Description</th>
-                  <th class="p-4 text-right">Standard Rate</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60">
-                ${appState.priceBook.map(item => `
-                  <tr class="hover:bg-slate-900/40 transition">
-                    <td class="p-4 font-mono font-bold text-red-400">${item.code}</td>
-                    <td class="p-4 font-semibold text-slate-200">${item.title}</td>
-                    <td class="p-4 text-slate-400 text-xs">${item.description}</td> <td class="p-4 font-mono text-emerald-400 text-right font-bold">$${item.rate.toFixed(2)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
     }
 
     function addPriceBookItem() {
-      const code = prompt("Enter Service Code (e.g., ELE-REPAIR):");
+      const code = prompt("Enter Code (e.g. H-REPAIR):");
       if (!code) return;
-      const title = prompt("Enter Service Title:");
-      const rate = parseFloat(prompt("Enter Rate ($):", "150.00")) || 0;
-      const desc = prompt("Enter Description:");
-
-      appState.priceBook.push({ code, title, rate, description: desc });
-      saveState();
+      const title = prompt("Enter Title:");
+      const rate = parseFloat(prompt("Enter Rate ($):", "100.00")) || 0;
+      appState.priceBook.push({ code, title, rate, description: '' });
+      saveAppState();
       renderApp();
-    }
-
-    // 5. KNOWLEDGE BASE VIEW
-    function renderKnowledgeBaseView() {
-      return `
-        <div class="space-y-6">
-          <div>
-            <h3 class="text-xl font-bold text-slate-100">Manuals & Formulas Base</h3>
-            <p class="text-xs text-slate-400">Shared knowledge base for field service documentation.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            ${appState.knowledgeBase.map(item => `
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-mono">${item.fileType}</span>
-                    <span class="text-[10px] text-slate-500">${item.date}</span>
-                  </div>
-                  <h4 class="font-bold text-slate-200 text-sm mb-1">${item.title}</h4>
-                  <p class="text-xs text-slate-400 mb-3">${item.notes}</p>
-                </div>
-                <button onclick="alert('Opening Document Repository...')" class="w-full text-center text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-lg font-semibold border border-slate-800 transition">
-                  <i class="fa-solid fa-file-arrow-down mr-1"></i> View Document
-                </button>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // 6. CUSTOMERS & ASSETS VIEW
-    function renderCustomersView() {
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100">Customers & Installed Equipment</h3>
-              <p class="text-xs text-slate-400">Track client equipment profiles and maintenance schedules.</p>
-            </div>
-            <button onclick="addCustomer()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> Add Customer
-            </button>
-          </div>
-
-          <div class="space-y-6">
-            ${appState.customers.map(cust => `
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-                <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 gap-2">
-                  <div>
-                    <h4 class="text-base font-bold text-slate-100">${cust.name}</h4>
-                    <div class="text-xs text-slate-400">${cust.address} | Contact: ${cust.contactPerson} (${cust.phone})</div>
-                  </div>
-                  <button onclick="addEquipment('${cust.id}')" class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-800">
-                    <i class="fa-solid fa-plus mr-1"></i> Add Asset
-                  </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  ${cust.equipment.map(eq => `
-                    <div class="bg-slate-900 border border-slate-800/80 rounded-lg p-3 space-y-1">
-                      <div class="font-semibold text-xs text-slate-200">${eq.name}</div>
-                      <div class="text-[11px] text-slate-400">Model: ${eq.model} | S/N: ${eq.serial}</div>
-                      <div class="text-[11px] text-slate-500">Installed: ${eq.installedDate} | Ext. Maint: ${eq.lastExtMaint}</div>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
     }
 
     function addCustomer() {
-      const name = prompt("Enter Customer / Facility Name:");
+      const name = prompt("Enter Customer Name:");
       if (!name) return;
-      const contactPerson = prompt("Enter Contact Person Name:");
-      const phone = prompt("Enter Phone Number:");
-
       appState.customers.push({
         id: 'cust-' + Date.now(),
         name,
-        contactPerson: contactPerson || name,
-        phone: phone || '(555) 000-0000',
+        contactPerson: name,
+        phone: '(555) 123-4567',
         email: 'info@client.com',
-        address: 'Physical Address',
+        address: '123 Main St',
         equipment: []
       });
-
-      saveState();
+      saveAppState();
       renderApp();
     }
 
-    function addEquipment(custId) {
-      const name = prompt("Enter Equipment / Asset Name (e.g. Air Handler Unit):");
-      if (!name) return;
-      const model = prompt("Enter Model Number:");
-
-      const cust = appState.customers.find(c => c.id === custId);
-      if (cust) {
-        cust.equipment.push({
-          id: 'eq-' + Date.now(),
-          name,
-          model: model || 'N/A',
-          serial: 'SN-' + Math.floor(Math.random() * 100000),
-          installedDate: new Date().toISOString().split('T')[0],
-          lastExtMaint: 'Scheduled Routine'
-        });
-        saveState();
-        renderApp();
-      }
-    }
-
-    // 7. CONTACTS DIRECTORY VIEW
-    function renderContactsView() {
-      return `
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100">Directory & Vendor Contacts</h3>
-              <p class="text-xs text-slate-400">Vendor help desks, tech support, and internal directory.</p>
-            </div>
-            <button onclick="addContact()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> Add Contact
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            ${appState.contacts.map(contact => `
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <span class="text-[10px] uppercase font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">${contact.type}</span>
-                  <h4 class="font-bold text-slate-200 mt-2 text-sm">${contact.name}</h4>
-                  <p class="text-xs text-slate-400"><i class="fa-solid fa-phone mr-1"></i> ${contact.phone}</p>
-                  <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot mr-1"></i> ${contact.address}</p>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    function addContact() {
-      const name = prompt("Enter Vendor / Contact Name:");
-      if (!name) return;
-      const phone = prompt("Enter Phone Number:");
-      const type = prompt("Enter Type (e.g. Vendor, Support, Supplier):", "Vendor");
-
-      appState.contacts.push({
-        id: 'c-' + Date.now(),
-        name,
-        phone: phone || '(800) 000-0000',
-        address: '123 Supply Ave',
-        type: type || 'Vendor'
-      });
-      saveState();
-      renderApp();
-    }
-
-    // 8. AUDIT LOG VIEW
-    function renderAuditLogView() {
-      return `
-        <div class="space-y-6">
-          <div>
-            <h3 class="text-xl font-bold text-slate-100">System Audit Log</h3>
-            <p class="text-xs text-slate-400">Activity and event records logged across staff updates.</p>
-          </div>
-
-          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-900 text-xs text-slate-400 uppercase border-b border-slate-800">
-                <tr>
-                  <th class="p-4">Timestamp</th>
-                  <th class="p-4">User</th>
-                  <th class="p-4">Role</th>
-                  <th class="p-4">Action Detail</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60">
-                ${appState.auditLog.map(log => `
-                  <tr>
-                    <td class="p-4 font-mono text-xs text-slate-400">${log.timestamp}</td>
-                    <td class="p-4 font-semibold text-slate-200">${log.user}</td>
-                    <td class="p-4 text-xs capitalize text-slate-400">${log.role}</td>
-                    <td class="p-4 text-xs text-slate-300">${log.action}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    // Initial Application Load
     renderApp();
   </script>
 </body>
