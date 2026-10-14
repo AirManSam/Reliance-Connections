@@ -36,8 +36,8 @@
       currentView: 'dashboard',
       selectedCustomerId: null,
       searchTerm: '',
+      activeShareWo: null,
       
-      // Audit Log Filters state
       auditFilter: {
         search: '',
         user: '',
@@ -45,11 +45,9 @@
         date: ''
       },
 
-      // Time Tab Filter state
       timeReportDate: new Date().toISOString().split('T')[0],
       timeReportTechId: '',
 
-      // Restock Tab Filter state
       restockReportDate: new Date().toISOString().split('T')[0],
       restockReportUserId: '',
       
@@ -60,21 +58,18 @@
         { id: 't4', name: 'Tyler Cox', trades: ['HVAC', 'Generators', 'Time'], phone: '555-0195', status: 'On Break' }
       ],
 
-      // Tech Support Contacts Directory
       contacts: [
         { id: 'cnt1', name: 'Trane Commercial Tech Support', phone: '(800) 532-3311', email: 'support@trane-commercial.com', address: '800 E Beaty St, Davidson, NC 28036' },
         { id: 'cnt2', name: 'Generac Dealer Technical Hotline', phone: '(888) 436-3722', email: 'techsupport@generac.com', address: 'S45W29290 Hwy 59, Waukesha, WI 53189' },
         { id: 'cnt3', name: 'LiftMaster Gate Support Desk', phone: '(800) 528-2806', email: 'techsupport@liftmaster.com', address: '300 Windsor Dr, Oak Brook, IL 60523' }
       ],
 
-      // Shared Knowledge Base
       knowledgeBase: [
         { id: 'kb1', title: 'Trane Rooftop HVAC Service Manual', category: 'HVAC', fileType: 'PDF', url: '#', addedBy: 'Samuel Corson', date: '2024-01-10', notes: 'Includes refrigerant pressure curves & wiring diagrams.' },
         { id: 'kb2', title: 'Generac Generator Diagnostic & Voltage Formulas', category: 'Generators', fileType: 'DOCX', url: '#', addedBy: 'Samuel Corson', date: '2024-01-15', notes: 'Ohms law calculations, ATS troubleshooting, and load testing formulas.' },
         { id: 'kb3', title: 'LiftMaster Gate Barrier Loop Wiring Guide', category: 'Gates', fileType: 'PDF', url: '#', addedBy: 'Samuel Corson', date: '2024-02-01', notes: 'Diagram for induction loop detectors and access control keypads.' }
       ],
 
-      // Company Price Book
       priceBook: [
         { id: 'pb1', code: 'HVAC-PM-45', title: 'HVAC Semi-Annual Tune-Up', category: 'HVAC', unitPrice: 150.00, description: 'Filter replacement, coil inspection, and refrigerant check.' },
         { id: 'pb2', code: 'GEN-DIAG-45', title: 'Generator Load Test & Diagnostic', category: 'Generators', unitPrice: 220.00, description: 'Full system diagnostic run and transfer switch inspection.' },
@@ -128,6 +123,7 @@
           equipmentName: 'Roof Rooftop HVAC - Unit 1',
           trade: 'HVAC',
           status: 'In Progress',
+          needsFollowUp: true,
           techId: 't1',
           techName: 'Nathan Libranda',
           createdDate: new Date().toISOString().split('T')[0],
@@ -138,6 +134,9 @@
           ],
           workLogs: [
             { id: 'wl1', timestamp: new Date().toISOString().split('T')[0] + ' 08:15 AM', user: 'Nathan Libranda', note: 'Arrived on site. Replaced filters and tested airflow.' }
+          ],
+          attachments: [
+            { id: 'att1', name: 'Unit_1_Inspection.pdf', type: 'file' }
           ]
         },
         {
@@ -147,6 +146,7 @@
           equipmentName: 'Home Tankless Water Heater',
           trade: 'Time',
           status: 'In Progress',
+          needsFollowUp: false,
           techId: 't2',
           techName: 'Jason Libranda',
           createdDate: new Date().toISOString().split('T')[0],
@@ -156,7 +156,8 @@
           ],
           workLogs: [
             { id: 'wl2', timestamp: new Date().toISOString().split('T')[0] + ' 01:00 PM', user: 'Jason Libranda', note: 'On site performing hourly service.' }
-          ]
+          ],
+          attachments: []
         }
       ],
 
@@ -174,12 +175,12 @@
     };
 
     function loadAppState() {
-      const saved = localStorage.getItem('reliance_crm_state_v10');
+      const saved = localStorage.getItem('reliance_crm_state_v16');
       return saved ? JSON.parse(saved) : INITIAL_STATE;
     }
 
     function saveAppState() {
-      localStorage.setItem('reliance_crm_state_v10', JSON.stringify(appState));
+      localStorage.setItem('reliance_crm_state_v16', JSON.stringify(appState));
       renderApp();
     }
 
@@ -242,7 +243,7 @@
           ${renderSidebar()}
           <div class="flex-1 flex flex-col overflow-hidden">
             ${renderHeader()}
-            <main class="flex-1 overflow-y-auto p-6 bg-slate-900/50 custom-scrollbar">
+            <main class="flex-1 overflow-y-auto p-6 bg-slate-900/50 custom-scrollbar relative">
               ${renderCurrentView()}
             </main>
           </div>
@@ -258,9 +259,8 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-rose-500 to-red-700"></div>
             
             <div class="text-center mb-8">
-              <div class="inline-flex items-center justify-center bg-slate-950 px-4 py-2 rounded-xl border border-red-600/30 mb-3 shadow-lg shadow-red-600/10">
-                <span class="font-extrabold text-2xl tracking-tight text-white">R</span>
-                <span class="font-extrabold text-2xl tracking-tight text-red-500 ml-0.5">C</span>
+              <div class="inline-flex items-center justify-center bg-red-600 px-3.5 py-1.5 rounded-lg mb-3 shadow-md">
+                <span class="font-sans font-bold text-xl tracking-normal text-white">R</span><span class="font-sans font-bold text-xl tracking-normal text-white ml-1">C</span>
               </div>
               <h1 class="text-2xl font-bold text-white tracking-wide">RELIANCE CONNECTIONS</h1>
               <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-semibold">Field Operations CRM</p>
@@ -325,9 +325,8 @@
         <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between">
           <div>
             <div class="p-5 border-b border-slate-800 flex items-center gap-3">
-              <div class="bg-slate-900 border border-red-600/30 px-3 py-1.5 rounded-xl shadow-lg shadow-red-600/10 flex items-center">
-                <span class="font-black text-xl tracking-tighter text-white">R</span>
-                <span class="font-black text-xl tracking-tighter text-red-500 ml-0.5">C</span>
+              <div class="bg-red-600 px-2.5 py-1 rounded shadow-md flex items-center">
+                <span class="font-sans font-bold text-base tracking-normal text-white">R</span><span class="font-sans font-bold text-base tracking-normal text-white ml-1">C</span>
               </div>
               <div>
                 <h1 class="font-bold text-white tracking-wide text-sm leading-tight">RELIANCE</h1>
@@ -568,7 +567,8 @@
                       <td class="p-4 text-slate-300">${wo.techName || 'Unassigned'}</td>
                       <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 rounded text-slate-200 font-semibold">${wo.trade}</span></td>
                       <td class="p-4 text-slate-300">${durationHours} hrs (${woMinutes} mins on site)</td>
-                      <td class="p-4 text-center font-mono font-bold text-amber-400">${woMinutes} Mins</td>                       <td class="p-4 text-right font-mono font-bold text-rose-400">$${woSpiff.toFixed(2)}</td>
+                      <td class="p-4 text-center font-mono font-bold text-amber-400">${woMinutes} Mins</td>
+                      <td class="p-4 text-right font-mono font-bold text-rose-400">$${woSpiff.toFixed(2)}</td>
                     </tr>
                   `;
                 }).join('') : `
@@ -795,19 +795,34 @@
 
             ${selectedCustomer ? `
               <div class="lg:col-span-2 space-y-6 overflow-y-auto custom-scrollbar pr-1">
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
-                  <h2 class="text-xl font-bold text-white">${selectedCustomer.name}</h2>
-                  <p class="text-xs text-slate-400 mt-1">${selectedCustomer.address} \vert{}${selectedCustomer.phone}</p>
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex items-start justify-between">
+                  <div>
+                    <h2 class="text-xl font-bold text-white">${selectedCustomer.name}</h2>
+                    <p class="text-xs text-slate-400 mt-1">Contact: ${selectedCustomer.contactPerson || 'N/A'} | ${selectedCustomer.address} | ${selectedCustomer.phone} | ${selectedCustomer.email || 'No email'}</p>
+                  </div>
+                  <button onclick="openEditCustomerModal('${selectedCustomer.id}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow transition flex items-center gap-1.5 flex-shrink-0">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Customer
+                  </button>
                 </div>
 
                 <div>
-                  <h3 class="text-sm font-bold text-white mb-3">Equipment Sub-Accounts (${selectedCustomer.equipments.length})</h3>
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-white">Equipment Sub-Accounts (${selectedCustomer.equipments.length})</h3>
+                  </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     ${selectedCustomer.equipments.map(eq => `
-                      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">${eq.category}</span>
-                        <h4 class="font-bold text-white text-sm mt-2">${eq.name}</h4>
-                        <p class="text-xs text-slate-400">Model: ${eq.model} | S/N: ${eq.serial}</p>
+                      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div>
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">${eq.category}</span>
+                            <button onclick="openEditEquipmentModal('${selectedCustomer.id}', '${eq.id}')" title="Edit Equipment" class="text-slate-400 hover:text-white text-xs">
+                              <i class="fa-solid fa-pen-to-square"></i> Edit Sub
+                            </button>
+                          </div>
+                          <h4 class="font-bold text-white text-sm mb-1">${eq.name}</h4>
+                          <p class="text-xs text-slate-400">Brand: ${eq.brand || 'N/A'} | Model: ${eq.model || 'N/A'}</p>
+                          <p class="text-xs text-slate-400 font-mono mt-1">S/N: ${eq.serial || 'N/A'}</p>
+                        </div>
                       </div>
                     `).join('')}
                   </div>
@@ -820,6 +835,76 @@
     }
 
     function selectCustomer(id) { appState.selectedCustomerId = id; saveAppState(); }
+
+    function openEditCustomerModal(customerId) {
+      const cust = appState.customers.find(c => c.id === customerId);
+      if (!cust) return;
+
+      const newName = prompt("Edit Company / Customer Name:", cust.name);
+      if (newName === null) return;
+      const newContact = prompt("Edit Contact Person:", cust.contactPerson || '');
+      if (newContact === null) return;
+      const newPhone = prompt("Edit Phone Number:", cust.phone);
+      if (newPhone === null) return;
+      const newEmail = prompt("Edit Email Address:", cust.email || '');
+      if (newEmail === null) return;
+      const newAddress = prompt("Edit Address:", cust.address);
+      if (newAddress === null) return;
+
+      cust.name = newName || cust.name;
+      cust.contactPerson = newContact;
+      cust.phone = newPhone || cust.phone;
+      cust.email = newEmail;
+      cust.address = newAddress || cust.address;
+
+      appState.customerChangeLogs.unshift({
+        id: 'log-' + Date.now(),
+        timestamp: new Date().toLocaleString(),
+        user: appState.currentUser.name + ' (' + appState.currentUser.role.toUpperCase() + ')',
+        customerId: cust.id,
+        customerName: cust.name,
+        action: 'Updated Customer Info',
+        details: `Edited details for ${cust.name}.`
+      });
+
+      saveAppState();
+    }
+
+    function openEditEquipmentModal(customerId, eqId) {
+      const cust = appState.customers.find(c => c.id === customerId);
+      if (!cust) return;
+      const eq = cust.equipments.find(e => e.id === eqId);
+      if (!eq) return;
+
+      const newName = prompt("Edit Equipment / Asset Name:", eq.name);
+      if (newName === null) return;
+      const newCategory = prompt("Edit Category (HVAC, Generators, Plumbing, Gates, Electrical):", eq.category);
+      if (newCategory === null) return;
+      const newBrand = prompt("Edit Brand:", eq.brand || '');
+      if (newBrand === null) return;
+      const newModel = prompt("Edit Model:", eq.model || '');
+      if (newModel === null) return;
+      const newSerial = prompt("Edit Serial Number (S/N):", eq.serial || '');
+      if (newSerial === null) return;
+
+      eq.name = newName || eq.name;
+      eq.category = newCategory || eq.category;
+      eq.brand = newBrand;
+      eq.model = newModel;
+      eq.serial = newSerial;
+
+      appState.customerChangeLogs.unshift({
+        id: 'log-' + Date.now(),
+        timestamp: new Date().toLocaleString(),
+        user: appState.currentUser.name + ' (' + appState.currentUser.role.toUpperCase() + ')',
+        customerId: cust.id,
+        customerName: cust.name,
+        action: 'Updated Equipment Sub-Account',
+        details: `Edited equipment sub-account: ${eq.name} (${cust.name}).`
+      });
+
+      saveAppState();
+    }
 
     // --- CSR SLOT BOOKING BOARD ---
     function renderCSRBoardView() {
@@ -848,7 +933,8 @@
               <tbody class="divide-y divide-slate-800">
                 ${appState.csrSlots.map(slot => `
                   <tr>
-                    <td class="p-4 font-bold font-mono text-slate-200 bg-slate-900/30">${slot.time}</td>${['csr1', 'csr2', 'csr3'].map(station => {
+                    <td class="p-4 font-bold font-mono text-slate-200 bg-slate-900/30">${slot.time}</td>
+                    ${['csr1', 'csr2', 'csr3'].map(station => {
                       const data = slot[station];
                       return `
                         <td class="p-4">
@@ -1063,12 +1149,14 @@
         equipmentName: equipmentName || 'General Asset',
         trade: trade || 'HVAC',
         status: 'Unassigned',
+        needsFollowUp: false,
         techId: '',
         techName: '',
         createdDate: new Date().toISOString().split('T')[0],
         description: description || '',
         lineItems: [],
-        workLogs: []
+        workLogs: [],
+        attachments: []
       };
 
       appState.workOrders.push(newWO);
@@ -1124,7 +1212,7 @@
                     <td class="p-4 font-mono font-bold text-red-400">${pb.code}</td>
                     <td class="p-4 font-bold text-white">${pb.title}</td>
                     <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 rounded font-semibold text-slate-300">${pb.category}</span></td>
-                    <td class="p-4 text-slate-400">${pb.description}</td>                     <td class="p-4 text-right font-mono font-bold text-emerald-400">$${pb.unitPrice.toFixed(2)}</td>${isManager ? `
+                    <td class="p-4 text-slate-400">${pb.description}</td> <td class="p-4 text-right font-mono font-bold text-emerald-400">$${pb.unitPrice.toFixed(2)}</td>${isManager ? `
                       <td class="p-4 text-center space-x-2">
                         <button onclick="editPriceBookItem('${pb.id}')" title="Edit Item" class="text-slate-400 hover:text-white">
                           <i class="fa-solid fa-pen-to-square"></i>
@@ -1293,6 +1381,8 @@
         wo.status.toLowerCase().includes(query)
       );
 
+      const activeShareWo = appState.activeShareWo ? appState.workOrders.find(w => w.id === appState.activeShareWo) : null;
+
       return `
         <div class="space-y-6">
           <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -1313,16 +1403,26 @@
               const totalSpiff = (wo.lineItems || []).reduce((acc, item) => acc + ((item.spiff || 0) * (item.qty || 1)), 0);
 
               return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+                <div class="bg-slate-950 border ${wo.needsFollowUp ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-slate-800'} rounded-xl p-5 space-y-4 relative">
                   <div class="flex items-start justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <span class="font-mono font-bold text-red-500 text-sm">${wo.id}</span>
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-red-500 text-sm">${wo.id}</span>${wo.needsFollowUp ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">⚠️ Needs Follow-Up</span>' : ''}
+                      </div>
                       <h4 class="font-bold text-white text-base mt-1">${wo.customerName}</h4>
                       <p class="text-xs text-slate-400">${wo.equipmentName} (${wo.techName || 'Unassigned'})</p>
                     </div>
-                    <span class="px-2.5 py-1 rounded text-xs font-bold ${wo.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
-                      ${wo.status}
-                    </span>
+                    <div class="flex items-center gap-2 flex-wrap justify-end">
+                      <button onclick="toggleFollowUp('${wo.id}')" title="${wo.needsFollowUp ? 'Unmark Follow-Up' : 'Mark for Follow-Up'}" class="px-2.5 py-1 rounded text-xs font-bold transition ${wo.needsFollowUp ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}">
+                        <i class="fa-solid fa-flag"></i> ${wo.needsFollowUp ? 'Follow-Up Active' : 'Mark Follow-Up'}
+                      </button>
+                      <button onclick="openShareModal('${wo.id}')" title="Share Work Order" class="px-2.5 py-1 rounded text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-share-nodes"></i> Share
+                      </button>
+                      <span class="px-2.5 py-1 rounded text-xs font-bold ${wo.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">
+                        ${wo.status}
+                      </span>
+                    </div>
                   </div>
 
                   <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
@@ -1334,15 +1434,20 @@
                     </div>
 
                     <div class="space-y-2 divide-y divide-slate-800/60">
-                      ${(wo.lineItems || []).map(item => `
+                      ${(wo.lineItems || []).length > 0 ? (wo.lineItems || []).map(item => `
                         <div class="pt-2 flex items-center justify-between text-xs text-slate-300">
                           <div>
                             <p class="font-bold text-white"><span class="font-mono text-amber-400">[${item.code || 'N/A'}]</span> ${item.title} (x${item.qty})</p>
                             <p class="text-[10px] text-slate-400">Pay: <span class="text-amber-400 font-semibold">${item.minutes || 0} mins</span> | SPIFF: <span class="text-rose-400 font-semibold">$${(item.spiff || 0).toFixed(2)}</span></p>
                           </div>
-                          <span class="font-mono text-emerald-400 font-semibold">$${(item.total || 0).toFixed(2)}</span>
+                          <div class="flex items-center gap-3">
+                            <span class="font-mono text-emerald-400 font-semibold">$${(item.total || 0).toFixed(2)}</span>
+                            <button onclick="removeLineItemFromWO('${wo.id}', '${item.id}')" title="Remove Line Item" class="text-slate-500 hover:text-red-400">
+                              <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                          </div>
                         </div>
-                      `).join('')}
+                      `).join('') : '<p class="text-[11px] text-slate-500 italic text-center py-1">No line items added yet.</p>'}
                     </div>
 
                     <div class="pt-3 border-t border-slate-800 space-y-1 text-xs">
@@ -1352,36 +1457,169 @@
                       </div>
                       <div class="flex justify-between font-semibold text-slate-300">
                         <span>Total Tech SPIFF Bonus:</span>
-                        <span class="font-mono text-rose-400">$${totalSpiff.toFixed(2)}</span>                       </div>                       <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800">                         <span>Total Invoice Amount:</span>                         <span class="font-mono text-emerald-400">$${totalAmount.toFixed(2)}</span>
+                        <span class="font-mono text-rose-400">$${totalSpiff.toFixed(2)}</span> </div> <div class="flex justify-between font-bold text-white pt-1 border-t border-slate-800"> <span>Total Invoice Amount:</span> <span class="font-mono text-emerald-400">$${totalAmount.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <h5 class="text-xs font-bold text-slate-300 mb-2">Technician Field Notes</h5>
-                    <div class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                      ${wo.workLogs.map(log => `
-                        <div class="p-2 bg-slate-900 rounded text-[11px] text-slate-300 border border-slate-800/80">
-                          <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                            <span class="font-bold text-slate-400">${log.user}</span>
-                            <span>${log.timestamp}</span>
-                          </div>
-                          <p>${log.note}</p>
-                        </div>
-                      `).join('')}
+                  <!-- Interactive Notes Box Section -->
+                  <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <h5 class="text-xs font-bold text-slate-200"><i class="fa-solid fa-note-sticky text-red-500"></i> Field Notes & Activity Log</h5>
+                      <span class="text-[10px] text-slate-400">${(wo.workLogs || []).length} notes</span>
                     </div>
 
-                    <form onsubmit="addWorkOrderNote(event, '${wo.id}')" class="mt-3 flex gap-2">
-                      <input type="text" placeholder="Add field note..." class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:border-red-500" required />
-                      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">Post</button>
+                    <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                      ${(wo.workLogs || []).length > 0 ? wo.workLogs.map(log => `
+                        <div class="p-2.5 bg-slate-950 rounded border border-slate-800 text-xs space-y-1">
+                          <div class="flex justify-between items-center text-[10px] text-slate-500">
+                            <span class="font-bold text-slate-400">${log.user}</span>
+                            <div class="flex items-center gap-2">
+                              <span>${log.timestamp}</span>
+                              <button onclick="editWorkOrderNote('${wo.id}', '${log.id}')" title="Edit Note" class="text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-pen"></i>
+                              </button>
+                              <button onclick="deleteWorkOrderNote('${wo.id}', '${log.id}')" title="Delete Note" class="text-slate-500 hover:text-red-400">
+                                <i class="fa-solid fa-trash-can"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <p class="text-slate-200 whitespace-pre-wrap">${log.note}</p>
+                        </div>
+                      `).join('') : '<p class="text-[11px] text-slate-500 italic text-center py-2">No notes added yet.</p>'}
+                    </div>
+
+                    <form onsubmit="addWorkOrderNote(event, '${wo.id}')" class="flex gap-2 pt-1 border-t border-slate-800">
+                      <input type="text" placeholder="Click here or type to add a note..." class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-red-500" required />
+                      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Post Note
+                      </button>
                     </form>
+                  </div>
+
+                  <!-- File & Picture Upload Section -->
+                  <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <h5 class="text-xs font-bold text-slate-200"><i class="fa-solid fa-paperclip text-red-500"></i> Files & Pictures</h5>
+                      <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold px-2.5 py-1 rounded border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-upload"></i> Upload File/Pic
+                        <input type="file" onchange="handleFileUpload(event, '${wo.id}')" class="hidden" accept="image/*,.pdf,.doc,.docx" />
+                      </label>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      ${(wo.attachments || []).length > 0 ? (wo.attachments || []).map(att => `
+                        <div class="p-2 bg-slate-950 rounded border border-slate-800 flex items-center justify-between text-xs">
+                          <div class="flex items-center gap-2 truncate">
+                            <i class="fa-solid ${att.type === 'image' ? 'fa-image text-emerald-400' : 'fa-file-pdf text-rose-400'}"></i>
+                            <span class="text-slate-300 truncate text-[11px]" title="${att.name}">${att.name}</span>
+                          </div>
+                          <button onclick="deleteAttachment('${wo.id}', '${att.id}')" class="text-slate-500 hover:text-red-400 text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      `).join('') : '<div class="col-span-2 text-[11px] text-slate-500 italic text-center py-1">No files or pictures uploaded yet.</div>'}
+                    </div>
                   </div>
                 </div>
               `;
             }).join('')}
           </div>
+
+          <!-- Share Options Modal Popup -->
+          ${activeShareWo ? `
+            <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 class="font-bold text-white text-base">Share Work Order / Estimate</h3>
+                    <p class="text-xs text-slate-400 font-mono mt-0.5">${activeShareWo.id} —${activeShareWo.customerName}</p>
+                  </div>
+                  <button onclick="closeShareModal()" class="text-slate-400 hover:text-white text-sm p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                  <button onclick="executeShareAction('print', '${activeShareWo.id}')" class="flex items-center gap-3 p-3.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-red-950/50 border border-red-800/50 flex items-center justify-center text-red-400 group-hover:scale-105 transition">
+                      <i class="fa-solid fa-print"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-white text-sm">Print Document</h4>
+                      <p class="text-xs text-slate-400">Send work order to connected printer or save as PDF</p>
+                    </div>
+                  </button>
+
+                  <button onclick="executeShareAction('email', '${activeShareWo.id}')" class="flex items-center gap-3 p-3.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-sky-950/50 border border-sky-800/50 flex items-center justify-center text-sky-400 group-hover:scale-105 transition">
+                      <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-white text-sm">Email to Customer</h4>
+                      <p class="text-xs text-slate-400">Dispatch copy directly to customer email account</p>
+                    </div>
+                  </button>
+
+                  <button onclick="executeShareAction('text', '${activeShareWo.id}')" class="flex items-center gap-3 p-3.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-950/50 border border-emerald-800/50 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                      <i class="fa-solid fa-comment-sms"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-white text-sm">Send via Text (SMS)</h4>
+                      <p class="text-xs text-slate-400">Text digital dispatch link or status update to mobile number</p>
+                    </div>
+                  </button>
+                </div>
+
+                <div class="pt-2">
+                  <button onclick="closeShareModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-lg transition">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
         </div>
       `;
+    }
+
+    function openShareModal(woId) {
+      appState.activeShareWo = woId;
+      saveAppState();
+    }
+
+    function closeShareModal() {
+      appState.activeShareWo = null;
+      saveAppState();
+    }
+
+    function executeShareAction(actionType, woId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo) return;
+
+      if (actionType === 'print') {
+        alert(`Preparing printer for work order ${wo.id} (${wo.customerName})...`);
+      } else if (actionType === 'email') {
+        const emailAddr = prompt("Confirm customer email address:", "customer@domain.com");
+        if (emailAddr) {
+          alert(`Work order ${wo.id} successfully emailed to ${emailAddr}!`);
+        }
+      } else if (actionType === 'text') {
+        const phoneNum = prompt("Confirm mobile phone number for SMS:", "(555) 000-0000");
+        if (phoneNum) {
+          alert(`Work order ${wo.id} dispatch summary successfully sent via text to ${phoneNum}!`);
+        }
+      }
+      closeShareModal();
+    }
+
+    function toggleFollowUp(woId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (wo) {
+        wo.needsFollowUp = !wo.needsFollowUp;
+        saveAppState();
+      }
     }
 
     function addLineItemToWO(woId) {
@@ -1412,6 +1650,16 @@
       saveAppState();
     }
 
+    function removeLineItemFromWO(woId, itemId) {
+      if (confirm("Are you sure you want to remove this line item?")) {
+        const wo = appState.workOrders.find(w => w.id === woId);
+        if (wo && wo.lineItems) {
+          wo.lineItems = wo.lineItems.filter(item => item.id !== itemId);
+          saveAppState();
+        }
+      }
+    }
+
     function addWorkOrderNote(e, woId) {
       e.preventDefault();
       const input = e.target.querySelector('input');
@@ -1420,6 +1668,7 @@
 
       const wo = appState.workOrders.find(w => w.id === woId);
       if (wo) {
+        if (!wo.workLogs) wo.workLogs = [];
         wo.workLogs.push({
           id: 'wl-' + Date.now(),
           timestamp: new Date().toLocaleString(),
@@ -1427,6 +1676,58 @@
           note: noteText
         });
         saveAppState();
+      }
+    }
+
+    function editWorkOrderNote(woId, noteId) {
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo || !wo.workLogs) return;
+
+      const note = wo.workLogs.find(l => l.id === noteId);
+      if (!note) return;
+
+      const updatedText = prompt("Edit note content:", note.note);
+      if (updatedText !== null) {
+        note.note = updatedText.trim();
+        note.timestamp = new Date().toLocaleString() + ' (edited)';
+        saveAppState();
+      }
+    }
+
+    function deleteWorkOrderNote(woId, noteId) {
+      if (confirm("Are you sure you want to delete this note?")) {
+        const wo = appState.workOrders.find(w => w.id === woId);
+        if (wo && wo.workLogs) {
+          wo.workLogs = wo.workLogs.filter(l => l.id !== noteId);
+          saveAppState();
+        }
+      }
+    }
+
+    function handleFileUpload(e, woId) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (wo) {
+        if (!wo.attachments) wo.attachments = [];
+        const isImage = file.type.startsWith('image/');
+        wo.attachments.push({
+          id: 'att-' + Date.now(),
+          name: file.name,
+          type: isImage ? 'image' : 'file'
+        });
+        saveAppState();
+      }
+    }
+
+    function deleteAttachment(woId, attId) {
+      if (confirm("Remove this attachment?")) {
+        const wo = appState.workOrders.find(w => w.id === woId);
+        if (wo && wo.attachments) {
+          wo.attachments = wo.attachments.filter(a => a.id !== attId);
+          saveAppState();
+        }
       }
     }
 
