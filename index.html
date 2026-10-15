@@ -1,26 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ========================================== -->
+  <!-- SECTION: HEAD & META CONFIGURATION          -->
+  <!-- ========================================== -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Reliance Connections (RC) CRM - Mobile</title>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
     .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 2px; }
     /* Prevent pull-to-refresh / bounce artifacts on mobile web apps */
     body { overscroll-behavior-y: none; }
+    /* Drag and drop helper classes */
+    .draggable-card { cursor: grab; }
+    .draggable-card:active { cursor: grabbing; }
+    .drag-over { background-color: rgba(220, 38, 38, 0.15) !important; border-color: rgba(220, 38, 38, 0.5) !important; }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans antialiased h-screen overflow-hidden">
+  
+  <!-- Root App Container -->
   <div id="app" class="h-full flex flex-col"></div>
 
   <script>
-    // --- INITIAL STATE ---
+    // ==========================================
+    // SECTION: INITIAL APPLICATION STATE
+    // ==========================================
     const INITIAL_STATE = {
       currentUser: null,
       users: [
@@ -38,6 +52,7 @@
       selectedCustomerId: null,
       searchTerm: '',
       activeShareWo: null,
+      activeModal: null, // Stores active modal state and data for nice popups
       minimizedWorkOrders: {},
       mobileMenuOpen: false,
       
@@ -177,6 +192,10 @@
       ]
     };
 
+
+    // ==========================================
+    // SECTION: STATE MANAGEMENT & HELPERS
+    // ==========================================
     function loadAppState() {
       const saved = localStorage.getItem('reliance_crm_state_mobile_v1');
       return saved ? JSON.parse(saved) : INITIAL_STATE;
@@ -238,7 +257,15 @@
       renderApp();
     }
 
-    // --- MAIN RENDERER ---
+    function closeModal() {
+      appState.activeModal = null;
+      renderApp();
+    }
+
+
+    // ==========================================
+    // SECTION: MAIN RENDERER & ROUTER
+    // ==========================================
     function renderApp() {
       const root = document.getElementById('app');
       
@@ -259,10 +286,33 @@
             </main>
           </div>
         </div>
+        <!-- Global Popup Modal Window Container -->
+        ${renderActiveModal()}
       `;
     }
 
-    // --- LOGIN SCREEN ---
+    function renderCurrentView() {
+      switch (appState.currentView) {
+        case 'dashboard': return renderDashboardView();
+        case 'customers': return renderCustomersView();
+        case 'contacts': return renderContactsView();
+        case 'time_report': return renderTimeReportView();
+        case 'restock_report': return renderRestockReportView();
+        case 'csr_board': return renderCSRBoardView();
+        case 'dispatch_board': return renderDispatchBoardView();
+        case 'maintenance': return renderMaintenanceView();
+        case 'work_orders': return renderWorkOrdersView();
+        case 'price_book': return renderPriceBookView();
+        case 'manuals': return renderManualsView();
+        case 'logs': return renderLogsView();
+        default: return renderDashboardView();
+      }
+    }
+
+
+    // ==========================================
+    // SECTION: AUTHENTICATION & LOGIN SCREEN
+    // ==========================================
     function renderLoginScreen() {
       return `
         <div class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -315,7 +365,10 @@
       saveAppState();
     }
 
-    // --- SIDEBAR (RESPONSIVE / OFF-CANVAS FOR MOBILE) ---
+
+    // ==========================================
+    // SECTION: NAVIGATION SIDEBAR & HEADER
+    // ==========================================
     function renderSidebar() {
       const userRole = appState.currentUser.role;
       const navItems = [
@@ -423,26 +476,10 @@
       `;
     }
 
-    // --- VIEW ROUTER ---
-    function renderCurrentView() {
-      switch (appState.currentView) {
-        case 'dashboard': return renderDashboardView();
-        case 'customers': return renderCustomersView();
-        case 'contacts': return renderContactsView();
-        case 'time_report': return renderTimeReportView();
-        case 'restock_report': return renderRestockReportView();
-        case 'csr_board': return renderCSRBoardView();
-        case 'dispatch_board': return renderDispatchBoardView();
-        case 'maintenance': return renderMaintenanceView();
-        case 'work_orders': return renderWorkOrdersView();
-        case 'price_book': return renderPriceBookView();
-        case 'manuals': return renderManualsView();
-        case 'logs': return renderLogsView();
-        default: return renderDashboardView();
-      }
-    }
 
-    // --- DASHBOARD VIEW ---
+    // ==========================================
+    // SECTION: VIEW - DASHBOARD
+    // ==========================================
     function renderDashboardView() {
       const activeWorkOrders = appState.workOrders.filter(w => w.status !== 'Completed').length;
       const overdueMaint = appState.customers.flatMap(c => c.equipments).filter(e => new Date(e.nextMaintenance) < new Date()).length;
@@ -493,7 +530,10 @@
       `;
     }
 
-    // --- TIME TAB & DAILY TECH REPORT VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - TIME REPORT
+    // ==========================================
     function renderTimeReportView() {
       const isManager = appState.currentUser.role === 'manager';
       const currentUser = appState.currentUser;
@@ -614,7 +654,10 @@
       `;
     }
 
-    // --- RESTOCK TAB & DAILY PARTS REPORT VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - RESTOCK & PARTS REPORT
+    // ==========================================
     function renderRestockReportView() {
       const isManager = appState.currentUser.role === 'manager';
       const currentUser = appState.currentUser;
@@ -710,7 +753,10 @@
       `;
     }
 
-    // --- CONTACTS VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - CONTACTS DIRECTORY
+    // ==========================================
     function renderContactsView() {
       const query = (appState.searchTerm || '').toLowerCase();
       const filteredContacts = appState.contacts.filter(cnt => 
@@ -744,9 +790,14 @@
                 <div>
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/40">Tech Support</span>
-                    <button onclick="deleteContact('${cnt.id}')" title="Delete Contact" class="text-slate-500 hover:text-red-400 text-xs">
-                      <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                    <div class="space-x-1">
+                      <button onclick="openEditContactModal('${cnt.id}')" title="Edit Contact" class="text-slate-400 hover:text-white text-xs">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                      <button onclick="deleteContact('${cnt.id}')" title="Delete Contact" class="text-slate-500 hover:text-red-400 text-xs">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
                   </div>
                   <h4 class="font-bold text-white text-base mb-3">${cnt.name}</h4>
                   
@@ -781,6 +832,26 @@
       saveAppState();
     }
 
+    function openEditContactModal(contactId) {
+      const cnt = appState.contacts.find(c => c.id === contactId);
+      if (!cnt) return;
+      appState.activeModal = { type: 'editContact', contactId, data: { ...cnt } };
+      renderApp();
+    }
+
+    function saveEditContact(e, contactId) {
+      e.preventDefault();
+      const cnt = appState.contacts.find(c => c.id === contactId);
+      if (!cnt) return;
+
+      cnt.name = document.getElementById('modalContactName').value;
+      cnt.phone = document.getElementById('modalContactPhone').value;
+      cnt.email = document.getElementById('modalContactEmail').value;
+      cnt.address = document.getElementById('modalContactAddress').value;
+
+      closeModal();
+    }
+
     function deleteContact(id) {
       if (confirm("Are you sure you want to remove this contact?")) {
         appState.contacts = appState.contacts.filter(c => c.id !== id);
@@ -788,7 +859,10 @@
       }
     }
 
-    // --- CUSTOMERS & ASSETS VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - CUSTOMERS & ASSETS
+    // ==========================================
     function renderCustomersView() {
       const query = (appState.searchTerm || '').toLowerCase();
       const filteredCustomers = appState.customers.filter(c => 
@@ -872,23 +946,20 @@
     function openEditCustomerModal(customerId) {
       const cust = appState.customers.find(c => c.id === customerId);
       if (!cust) return;
+      appState.activeModal = { type: 'editCustomer', customerId, data: { ...cust } };
+      renderApp();
+    }
 
-      const newName = prompt("Edit Company / Customer Name:", cust.name);
-      if (newName === null) return;
-      const newContact = prompt("Edit Contact Person:", cust.contactPerson || '');
-      if (newContact === null) return;
-      const newPhone = prompt("Edit Phone Number:", cust.phone);
-      if (newPhone === null) return;
-      const newEmail = prompt("Edit Email Address:", cust.email || '');
-      if (newEmail === null) return;
-      const newAddress = prompt("Edit Address:", cust.address);
-      if (newAddress === null) return;
+    function saveEditCustomer(e, customerId) {
+      e.preventDefault();
+      const cust = appState.customers.find(c => c.id === customerId);
+      if (!cust) return;
 
-      cust.name = newName || cust.name;
-      cust.contactPerson = newContact;
-      cust.phone = newPhone || cust.phone;
-      cust.email = newEmail;
-      cust.address = newAddress || cust.address;
+      cust.name = document.getElementById('modalCustName').value;
+      cust.contactPerson = document.getElementById('modalCustContact').value;
+      cust.phone = document.getElementById('modalCustPhone').value;
+      cust.email = document.getElementById('modalCustEmail').value;
+      cust.address = document.getElementById('modalCustAddress').value;
 
       appState.customerChangeLogs.unshift({
         id: 'log-' + Date.now(),
@@ -900,7 +971,7 @@
         details: `Edited details for ${cust.name}.`
       });
 
-      saveAppState();
+      closeModal();
     }
 
     function openEditEquipmentModal(customerId, eqId) {
@@ -909,22 +980,22 @@
       const eq = cust.equipments.find(e => e.id === eqId);
       if (!eq) return;
 
-      const newName = prompt("Edit Equipment / Asset Name:", eq.name);
-      if (newName === null) return;
-      const newCategory = prompt("Edit Category (HVAC, Generators, Plumbing, Gates, Electrical):", eq.category);
-      if (newCategory === null) return;
-      const newBrand = prompt("Edit Brand:", eq.brand || '');
-      if (newBrand === null) return;
-      const newModel = prompt("Edit Model:", eq.model || '');
-      if (newModel === null) return;
-      const newSerial = prompt("Edit Serial Number (S/N):", eq.serial || '');
-      if (newSerial === null) return;
+      appState.activeModal = { type: 'editEquipment', customerId, eqId, data: { ...eq } };
+      renderApp();
+    }
 
-      eq.name = newName || eq.name;
-      eq.category = newCategory || eq.category;
-      eq.brand = newBrand;
-      eq.model = newModel;
-      eq.serial = newSerial;
+    function saveEditEquipment(e, customerId, eqId) {
+      e.preventDefault();
+      const cust = appState.customers.find(c => c.id === customerId);
+      if (!cust) return;
+      const eq = cust.equipments.find(e => e.id === eqId);
+      if (!eq) return;
+
+      eq.name = document.getElementById('modalEqName').value;
+      eq.category = document.getElementById('modalEqCategory').value;
+      eq.brand = document.getElementById('modalEqBrand').value;
+      eq.model = document.getElementById('modalEqModel').value;
+      eq.serial = document.getElementById('modalEqSerial').value;
 
       appState.customerChangeLogs.unshift({
         id: 'log-' + Date.now(),
@@ -936,10 +1007,13 @@
         details: `Edited equipment sub-account: ${eq.name} (${cust.name}).`
       });
 
-      saveAppState();
+      closeModal();
     }
 
-    // --- CSR SLOT BOOKING BOARD ---
+
+    // ==========================================
+    // SECTION: VIEW - CSR SLOT BOOKING BOARD
+    // ==========================================
     function renderCSRBoardView() {
       return `
         <div class="space-y-4 sm:space-y-6">
@@ -1021,18 +1095,22 @@
       const slotRow = appState.csrSlots.find(s => s.time === time);
       if (!slotRow || !slotRow[station].booked) return;
 
-      const currentData = slotRow[station];
-      const custName = prompt("Edit Customer Name:", currentData.customer);
-      if (custName === null) return;
-      const jobType = prompt("Edit Service Type:", currentData.jobType);
-      if (jobType === null) return;
+      appState.activeModal = { type: 'editCSR', time, station, data: { ...slotRow[station] } };
+      renderApp();
+    }
+
+    function saveEditCSRSlot(e, time, station) {
+      e.preventDefault();
+      const slotRow = appState.csrSlots.find(s => s.time === time);
+      if (!slotRow) return;
 
       slotRow[station] = {
         booked: true,
-        customer: custName || currentData.customer,
-        jobType: jobType || currentData.jobType
+        customer: document.getElementById('modalCSRCustomer').value,
+        jobType: document.getElementById('modalCSRJobType').value
       };
-      saveAppState();
+
+      closeModal();
     }
 
     function clearCSRSlot(time, station) {
@@ -1045,17 +1123,25 @@
       }
     }
 
-    // --- MULTI-DISPATCH BOARD VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - MULTI-DISPATCH BOARD (DRAG & DROP)
+    // ==========================================
     function renderDispatchBoardView() {
-      const statuses = ['Unassigned', 'Dispatched', 'In Progress', 'Completed'];
+      // Dynamic columns: Unassigned pool + each technician on the team
+      const dispatchColumns = [
+        { id: 'Unassigned', name: 'Unassigned Queue', techId: '', isPool: true },
+        ...appState.technicians.map(t => ({ id: t.name, name: t.name, techId: t.id, isPool: false }))
+      ];
+
       const query = (appState.searchTerm || '').toLowerCase();
 
       return `
-        <div class="space-y-4 sm:space-y-6">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 gap-3">
+        <div class="space-y-4 sm:space-y-6 h-full flex flex-col">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 gap-3 flex-shrink-0">
             <div>
-              <h3 class="font-bold text-white text-sm">Multi-Dispatcher Live Operations Board</h3>
-              <p class="text-xs text-slate-400">Assign technicians, manage statuses, and fully edit work order details</p>
+              <h3 class="font-bold text-white text-sm">Multi-Dispatcher Live Operations & Tech Schedule Board</h3>
+              <p class="text-xs text-slate-400">Drag & Drop calls between technicians or click any call card to view & edit details, notes & attachments</p>
             </div>
             <div class="flex items-center gap-3 w-full sm:w-auto">
               <div class="relative flex-1 sm:w-64">
@@ -1068,105 +1154,137 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            ${statuses.map(status => {
-              const orders = appState.workOrders.filter(w => {
-                const matchesStatus = w.status === status;
-                const matchesQuery = !query || w.id.toLowerCase().includes(query) || w.customerName.toLowerCase().includes(query) || w.equipmentName.toLowerCase().includes(query) || w.trade.toLowerCase().includes(query);
-                return matchesStatus && matchesQuery;
-              });
+          <!-- Horizontal Scrollable Kanban Board Container -->
+          <div class="flex-1 overflow-x-auto custom-scrollbar pb-4">
+            <div class="flex items-start gap-4 min-w-[1100px] h-full">
+              ${dispatchColumns.map(col => {
+                const columnOrders = appState.workOrders.filter(w => {
+                  const matchesCol = col.isPool ? (w.status === 'Unassigned' || !w.techName) : (w.techName === col.name);
+                  const matchesQuery = !query || w.id.toLowerCase().includes(query) || w.customerName.toLowerCase().includes(query) || w.equipmentName.toLowerCase().includes(query) || w.trade.toLowerCase().includes(query);
+                  return matchesCol && matchesQuery;
+                });
 
-              return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col h-auto md:h-[600px]">
-                  <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300">${status}</h4>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">${orders.length}</span>
-                  </div>
-
-                  <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
-                    ${orders.map(wo => `
-                      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 hover:border-slate-700 transition">
-                        <div class="flex items-center justify-between mb-2">
-                          <span class="font-mono font-bold text-xs text-red-400">${wo.id}</span>
-                          <div class="space-x-1">
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">${wo.trade}</span>
-                            <button onclick="editWorkOrderDetails('${wo.id}')" title="Edit Full Details" class="text-slate-400 hover:text-white text-xs ml-1">
-                              <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                          </div>
-                        </div>
-
-                        <h5 class="font-bold text-white text-xs mb-0.5">${wo.customerName}</h5>
-                        <p class="text-[11px] text-slate-400 mb-1">${wo.equipmentName}</p>
-                        <p class="text-[10px] text-slate-500 italic mb-3 line-clamp-2">${wo.description || 'No description provided.'}</p>
-
-                        <div class="space-y-2 pt-2 border-t border-slate-800/80 text-[11px]">
-                          <div>
-                            <label class="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Assign Tech</label>
-                            <select onchange="assignTechToWO('${wo.id}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:border-red-500">
-                              <option value="">-- Select Tech --</option>
-                              ${appState.technicians.map(t => `
-                                <option value="${t.id}" ${wo.techId === t.id ? 'selected' : ''}>${t.name} (${t.trades.join('/')})</option>
-                              `).join('')}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label class="block text-[10px] text-slate-500 uppercase font-semibold mb-1">Update Status</label>
-                            <select onchange="updateWOStatus('${wo.id}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:border-red-500">
-                              ${statuses.map(s => `<option value="${s}" ${wo.status === s ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                          </div>
-                        </div>
+                return `
+                  <div class="w-72 bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col h-[calc(100vh-250px)] flex-shrink-0"
+                       ondragover="allowDrop(event)"
+                       ondragenter="this.classList.add('drag-over')"
+                       ondragleave="this.classList.remove('drag-over')"
+                       ondrop="dropOrder(event, '${col.isPool ? '' : col.techId}', '${col.isPool ? 'Unassigned' : col.name}')">
+                    
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 flex-shrink-0">
+                      <div class="flex items-center gap-2 truncate">
+                        <span class="w-2 h-2 rounded-full ${col.isPool ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-200 truncate">${col.name}</h4>
                       </div>
-                    `).join('')}
+                      <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">${columnOrders.length}</span>
+                    </div>
+
+                    <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1" id="col-${col.id.replace(/\s+/g, '')}">
+                      ${columnOrders.length > 0 ? columnOrders.map(wo => {
+                        const noteCount = (wo.workLogs || []).length;
+                        const attachCount = (wo.attachments || []).length;
+
+                        return `
+                          <div draggable="true"
+                               ondragstart="dragStart(event, '${wo.id}')"
+                               onclick="openEditWorkOrderModal('${wo.id}')"
+                               class="draggable-card bg-slate-900 border ${wo.needsFollowUp ? 'border-amber-500 shadow-md shadow-amber-500/10' : 'border-slate-800'} rounded-lg p-3 hover:border-red-500/60 transition relative group">
+                            
+                            <div class="flex items-center justify-between mb-2">
+                              <div class="flex items-center gap-1.5">
+                                <span class="font-mono font-bold text-xs text-red-400">${wo.id}</span>
+                                ${wo.needsFollowUp ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 border border-amber-800 font-bold">⚠️ Follow-Up</span>' : ''}
+                              </div>
+                              <span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">${wo.trade}</span>
+                            </div>
+
+                            <h5 class="font-bold text-white text-xs mb-0.5 group-hover:text-red-400 transition truncate">${wo.customerName}</h5>
+                            <p class="text-[11px] text-slate-400 mb-1 truncate">${wo.equipmentName}</p>
+                            <p class="text-[10px] text-slate-500 italic mb-2 line-clamp-2">${wo.description || 'No description provided.'}</p>
+
+                            <!-- Indicators for Notes & Attachments -->
+                            <div class="flex items-center gap-2 mb-2 text-[10px] text-slate-400">
+                              <span class="flex items-center gap-1"><i class="fa-solid fa-note-sticky text-red-400"></i> ${noteCount}</span>
+                              <span class="flex items-center gap-1"><i class="fa-solid fa-paperclip text-sky-400"></i> ${attachCount}</span>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+                              <span class="font-semibold text-slate-300"><i class="fa-solid fa-clock text-amber-400 mr-1"></i> ${wo.status}</span>
+                              <span class="text-red-400 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-pen-to-square"></i> Edit Details</span>
+                            </div>
+                          </div>
+                        `;
+                      }).join('') : `
+                        <div class="h-32 flex items-center justify-center border-2 border-dashed border-slate-800/60 rounded-lg text-slate-600 text-xs italic">
+                          Drop calls here
+                        </div>
+                      `}
+                    </div>
                   </div>
-                </div>
-              `;
-            }).join('')}
+                `;
+              }).join('')}
+            </div>
           </div>
         </div>
       `;
     }
 
-    function assignTechToWO(woId, techId) {
+    // Drag and Drop Helper Functions
+    function dragStart(e, woId) {
+      e.dataTransfer.setData('text/plain', woId);
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+    }
+
+    function dropOrder(e, techId, techName) {
+      e.preventDefault();
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+      const woId = e.dataTransfer.getData('text/plain');
+      if (!woId) return;
+
       const wo = appState.workOrders.find(w => w.id === woId);
-      const tech = appState.technicians.find(t => t.id === techId);
       if (wo) {
         wo.techId = techId;
-        wo.techName = tech ? tech.name : '';
-        if (techId && wo.status === 'Unassigned') wo.status = 'Dispatched';
+        wo.techName = techName === 'Unassigned' ? '' : techName;
+        if (techId && wo.status === 'Unassigned') {
+          wo.status = 'Dispatched';
+        } else if (!techId) {
+          wo.status = 'Unassigned';
+        }
         saveAppState();
       }
     }
 
-    function updateWOStatus(woId, newStatus) {
-      const wo = appState.workOrders.find(w => w.id === woId);
-      if (wo) {
-        wo.status = newStatus;
-        saveAppState();
-      }
-    }
-
-    function editWorkOrderDetails(woId) {
+    function openEditWorkOrderModal(woId) {
       const wo = appState.workOrders.find(w => w.id === woId);
       if (!wo) return;
 
-      const customerName = prompt("Edit Customer Name:", wo.customerName);
-      if (customerName === null) return;
-      const equipmentName = prompt("Edit Equipment / Asset Name:", wo.equipmentName);
-      if (equipmentName === null) return;
-      const trade = prompt("Edit Trade Category (HVAC, Plumbing, Electrical, Gates, Generators):", wo.trade);
-      if (trade === null) return;
-      const description = prompt("Edit Job Description / Notes:", wo.description);
-      if (description === null) return;
+      appState.activeModal = { type: 'editWO', woId, data: { ...wo } };
+      renderApp();
+    }
 
-      wo.customerName = customerName || wo.customerName;
-      wo.equipmentName = equipmentName || wo.equipmentName;
-      wo.trade = trade || wo.trade;
-      wo.description = description !== null ? description : wo.description;
+    function saveEditWorkOrderDetails(e, woId) {
+      e.preventDefault();
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo) return;
 
-      saveAppState();
+      wo.customerName = document.getElementById('modalWOCustName').value;
+      wo.equipmentName = document.getElementById('modalWOEqName').value;
+      wo.trade = document.getElementById('modalWOTrade').value;
+      wo.status = document.getElementById('modalWOStatus').value;
+      wo.needsFollowUp = document.getElementById('modalWOFollowUp').checked;
+      
+      const newTechName = document.getElementById('modalWOTechName').value;
+      wo.techName = newTechName;
+      const foundTech = appState.technicians.find(t => t.name === newTechName);
+      wo.techId = foundTech ? foundTech.id : '';
+
+      wo.description = document.getElementById('modalWODesc').value;
+
+      closeModal();
     }
 
     function openCreateWorkOrderModal() {
@@ -1197,7 +1315,10 @@
       saveAppState();
     }
 
-    // --- COMPANY PRICE BOOK VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - COMPANY PRICE BOOK
+    // ==========================================
     function renderPriceBookView() {
       const isManager = appState.currentUser.role === 'manager';
       const query = (appState.searchTerm || '').toLowerCase();
@@ -1293,20 +1414,22 @@
       const pb = appState.priceBook.find(p => p.id === id);
       if (!pb) return;
 
-      const code = prompt("Item Code:", pb.code);
-      if (!code) return;
-      const title = prompt("Title:", pb.title);
-      const category = prompt("Category:", pb.category);
-      const unitPrice = parseFloat(prompt("Standard Rate ($):", pb.unitPrice.toString()) || "0");
-      const description = prompt("Description:", pb.description);
+      appState.activeModal = { type: 'editPriceBook', pbId: id, data: { ...pb } };
+      renderApp();
+    }
 
-      pb.code = code.toUpperCase();
-      pb.title = title || pb.title;
-      pb.category = category || pb.category;
-      pb.unitPrice = isNaN(unitPrice) ? pb.unitPrice : unitPrice;
-      pb.description = description || pb.description;
+    function saveEditPriceBookItem(e, id) {
+      e.preventDefault();
+      const pb = appState.priceBook.find(p => p.id === id);
+      if (!pb) return;
 
-      saveAppState();
+      pb.code = document.getElementById('modalPBCode').value.toUpperCase();
+      pb.title = document.getElementById('modalPBTitle').value;
+      pb.category = document.getElementById('modalPBCategory').value;
+      pb.unitPrice = parseFloat(document.getElementById('modalPBPrice').value) || 0;
+      pb.description = document.getElementById('modalPBDesc').value;
+
+      closeModal();
     }
 
     function deletePriceBookItem(id) {
@@ -1316,7 +1439,10 @@
       }
     }
 
-    // --- MANUALS & FORMULAS BASE VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - MANUALS & FORMULAS
+    // ==========================================
     function renderManualsView() {
       const isManager = appState.currentUser.role === 'manager';
       const query = (appState.searchTerm || '').toLowerCase();
@@ -1407,7 +1533,10 @@
       }
     }
 
-    // --- WORK ORDERS & ESTIMATES VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - WORK ORDERS & ESTIMATES
+    // ==========================================
     function renderWorkOrdersView() {
       const query = (appState.searchTerm || '').toLowerCase();
       const filteredWorkOrders = appState.workOrders.filter(wo => 
@@ -1532,7 +1661,7 @@
                     </div>
                   </div>
 
-                  <!-- Interactive Notes Box Section -->
+                  <!-- Field Notes & Activity Log -->
                   <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-3">
                     <div class="flex items-center justify-between">
                       <h5 class="text-xs font-bold text-slate-200"><i class="fa-solid fa-note-sticky text-red-500"></i> Field Notes & Activity Log</h5>
@@ -1567,7 +1696,7 @@
                     </form>
                   </div>
 
-                  <!-- File & Picture Upload Section -->
+                  <!-- Files & Pictures -->
                   <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-3">
                     <div class="flex items-center justify-between">
                       <h5 class="text-xs font-bold text-slate-200"><i class="fa-solid fa-paperclip text-red-500"></i> Files & Pictures</h5>
@@ -1767,12 +1896,22 @@
       const note = wo.workLogs.find(l => l.id === noteId);
       if (!note) return;
 
-      const updatedText = prompt("Edit note content:", note.note);
-      if (updatedText !== null) {
-        note.note = updatedText.trim();
-        note.timestamp = new Date().toLocaleString() + ' (edited)';
-        saveAppState();
-      }
+      appState.activeModal = { type: 'editNote', woId, noteId, data: { ...note } };
+      renderApp();
+    }
+
+    function saveEditWorkOrderNote(e, woId, noteId) {
+      e.preventDefault();
+      const wo = appState.workOrders.find(w => w.id === woId);
+      if (!wo || !wo.workLogs) return;
+
+      const note = wo.workLogs.find(l => l.id === noteId);
+      if (!note) return;
+
+      note.note = document.getElementById('modalNoteContent').value.trim();
+      note.timestamp = new Date().toLocaleString() + ' (edited)';
+
+      closeModal();
     }
 
     function deleteWorkOrderNote(woId, noteId) {
@@ -1812,7 +1951,10 @@
       }
     }
 
-    // --- MAINTENANCE TRACKER VIEW ---
+
+    // ==========================================
+    // SECTION: VIEW - MAINTENANCE TRACKER
+    // ==========================================
     function renderMaintenanceView() {
       const allEquipments = appState.customers.flatMap(c => 
         c.equipments.map(e => ({ ...e, parentCustomer: c.name, parentCustomerId: c.id }))
@@ -1868,7 +2010,10 @@
       `;
     }
 
-    // --- MANAGER AUDIT LOG VIEW WITH FILTERS ---
+
+    // ==========================================
+    // SECTION: VIEW - MANAGER AUDIT LOGS
+    // ==========================================
     function renderLogsView() {
       const filters = appState.auditFilter;
       const query = (filters.search || '').toLowerCase();
@@ -1975,22 +2120,376 @@
       `;
     }
 
+
+    // ==========================================
+    // SECTION: GLOBAL MODAL & ACTION HELPERS
+    // ==========================================
     function openNewCustomerModal() {
-      const name = prompt("Enter Customer / Company Name:");
+      appState.activeModal = { type: 'newCustomer' };
+      renderApp();
+    }
+
+    function saveNewCustomer(e) {
+      e.preventDefault();
+      const name = document.getElementById('modalNewCustName').value.trim();
       if (!name) return;
-      const phone = prompt("Phone:");
-      const address = prompt("Address:");
-      const newC = { id: 'c-' + Date.now(), name, contactPerson: name, phone: phone || '', email: '', address: address || '', type: 'Commercial', created: '2024-02-18', equipments: [] };
+      const phone = document.getElementById('modalNewCustPhone').value.trim();
+      const address = document.getElementById('modalNewCustAddress').value.trim();
+      const email = document.getElementById('modalNewCustEmail').value.trim();
+      const contactPerson = document.getElementById('modalNewCustContact').value.trim();
+
+      const newC = {
+        id: 'c-' + Date.now(),
+        name,
+        contactPerson: contactPerson || name,
+        phone: phone || '',
+        email: email || '',
+        address: address || '',
+        type: 'Commercial',
+        created: new Date().toISOString().split('T')[0],
+        equipments: []
+      };
+
       appState.customers.push(newC);
-      saveAppState();
+      closeModal();
     }
 
     function openAddTeamMemberModal() {
-      const name = prompt("Enter Name:");
-      const role = prompt("Role (manager, csr, dispatcher, technician, parts):", "parts");
-      if (name) { appState.users.push({ id: 'u-' + Date.now(), name, email: `${name.toLowerCase().replace(/\s+/g, '')}@reliance.com`, password: '123', role: role.toLowerCase() }); saveAppState(); }
+      appState.activeModal = { type: 'newTeamMember' };
+      renderApp();
     }
 
+    function saveNewTeamMember(e) {
+      e.preventDefault();
+      const name = document.getElementById('modalTeamName').value.trim();
+      if (!name) return;
+      const role = document.getElementById('modalTeamRole').value;
+
+      appState.users.push({
+        id: 'u-' + Date.now(),
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, '')}@reliance.com`,
+        password: '123',
+        role
+      });
+
+      closeModal();
+    }
+
+    // Dynamic Modal Renderer for All Edit, New Customer, and Add Team Popups
+    function renderActiveModal() {
+      const modal = appState.activeModal;
+      if (!modal) return '';
+
+      let modalContent = '';
+
+      if (modal.type === 'editCustomer') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Customer Account</h3>
+          <form onsubmit="saveEditCustomer(event, '${modal.customerId}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Company / Customer Name</label>
+              <input type="text" id="modalCustName" value="${d.name}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Contact Person</label>
+              <input type="text" id="modalCustContact" value="${d.contactPerson || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Phone Number</label>
+              <input type="text" id="modalCustPhone" value="${d.phone}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Email Address</label>
+              <input type="email" id="modalCustEmail" value="${d.email || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Physical Address</label>
+              <input type="text" id="modalCustAddress" value="${d.address}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Changes</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'editEquipment') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Equipment Sub-Account</h3>
+          <form onsubmit="saveEditEquipment(event, '${modal.customerId}', '${modal.eqId}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Equipment Name</label>
+              <input type="text" id="modalEqName" value="${d.name}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Category (HVAC, Generators, Plumbing, Gates, Electrical)</label>
+              <input type="text" id="modalEqCategory" value="${d.category}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Brand</label>
+              <input type="text" id="modalEqBrand" value="${d.brand || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Model</label>
+              <input type="text" id="modalEqModel" value="${d.model || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Serial Number (S/N)</label>
+              <input type="text" id="modalEqSerial" value="${d.serial || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500 font-mono" />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Changes</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'editContact') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Contact / Vendor</h3>
+          <form onsubmit="saveEditContact(event, '${modal.contactId}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Contact / Vendor Name</label>
+              <input type="text" id="modalContactName" value="${d.name}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Phone Number</label>
+              <input type="text" id="modalContactPhone" value="${d.phone}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Email Address</label>
+              <input type="email" id="modalContactEmail" value="${d.email || ''}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Physical Address</label>
+              <input type="text" id="modalContactAddress" value="${d.address}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Contact</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'editCSR') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit CSR Time Slot (${modal.time})</h3>
+          <form onsubmit="saveEditCSRSlot(event, '${modal.time}', '${modal.station}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Customer Name</label>
+              <input type="text" id="modalCSRCustomer" value="${d.customer}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Service Type / Job Type</label>
+              <input type="text" id="modalCSRJobType" value="${d.jobType}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Slot</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'editWO') {
+        const d = modal.data;
+        const workLogs = d.workLogs || [];
+        const attachments = d.attachments || [];
+
+        modalContent = `
+          <div class="space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar pr-1">
+            <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Work Order / Call (${d.id})</h3>
+            
+            <form onsubmit="saveEditWorkOrderDetails(event, '${modal.woId}')" class="space-y-3">
+              <div>
+                <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Customer Name</label>
+                <input type="text" id="modalWOCustName" value="${d.customerName}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Equipment / Asset Name</label>
+                <input type="text" id="modalWOEqName" value="${d.equipmentName}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Trade Category</label>
+                  <input type="text" id="modalWOTrade" value="${d.trade}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Job Status</label>
+                  <select id="modalWOStatus" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500">
+                    <option value="Unassigned" ${d.status === 'Unassigned' ? 'selected' : ''}>Unassigned</option>
+                    <option value="Dispatched" ${d.status === 'Dispatched' ? 'selected' : ''}>Dispatched</option>
+                    <option value="In Progress" ${d.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="Completed" ${d.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Assign Technician</label>
+                <select id="modalWOTechName" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500">
+                  <option value="">Unassigned Queue</option>
+                  ${appState.technicians.map(t => `<option value="${t.name}" ${d.techName === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2 py-1">
+                <input type="checkbox" id="modalWOFollowUp" ${d.needsFollowUp ? 'checked' : ''} class="w-4 h-4 accent-red-600 rounded bg-slate-950 border-slate-800" />
+                <label for="modalWOFollowUp" class="text-xs font-semibold text-amber-400">Mark this call for ⚠️ Follow-Up</label>
+              </div>
+
+              <div>
+                <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Job Description / Notes</label>
+                <textarea id="modalWODesc" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500">${d.description || ''}</textarea>
+              </div>
+
+              <!-- Tech Notes Section inside Modal -->
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2">
+                <h4 class="text-xs font-bold text-slate-300"><i class="fa-solid fa-note-sticky text-red-500"></i> Field Notes & Activity Logs (${workLogs.length})</h4>
+                <div class="space-y-1.5 max-h-28 overflow-y-auto custom-scrollbar">
+                  ${workLogs.length > 0 ? workLogs.map(log => `
+                    <div class="p-2 bg-slate-900 rounded border border-slate-800 text-[11px]">
+                      <span class="font-bold text-slate-400">${log.user} (${log.timestamp}):</span>
+                      <p class="text-slate-200 mt-0.5">${log.note}</p>
+                    </div>
+                  `).join('') : '<p class="text-[11px] text-slate-500 italic">No notes recorded yet.</p>'}
+                </div>
+              </div>
+
+              <!-- Attachments / Pictures Section inside Modal -->
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2">
+                <h4 class="text-xs font-bold text-slate-300"><i class="fa-solid fa-paperclip text-sky-400"></i> Uploaded Files & Pictures (${attachments.length})</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  ${attachments.length > 0 ? attachments.map(att => `
+                    <div class="p-2 bg-slate-900 rounded border border-slate-800 flex items-center justify-between text-[11px]">
+                      <span class="text-slate-300 truncate"><i class="fa-solid ${att.type === 'image' ? 'fa-image text-emerald-400' : 'fa-file-pdf text-rose-400'} mr-1"></i> ${att.name}</span>
+                    </div>
+                  `).join('') : '<div class="col-span-full text-[11px] text-slate-500 italic">No files or pictures uploaded yet.</div>'}
+                </div>
+              </div>
+
+              <div class="flex gap-2 pt-2">
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Work Order</button>
+                <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+              </div>
+            </form>
+          </div>
+        `;
+      } else if (modal.type === 'editPriceBook') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Price Book Item</h3>
+          <form onsubmit="saveEditPriceBookItem(event, '${modal.pbId}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Item Code</label>
+              <input type="text" id="modalPBCode" value="${d.code}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500 font-mono" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Title</label>
+              <input type="text" id="modalPBTitle" value="${d.title}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Category</label>
+              <input type="text" id="modalPBCategory" value="${d.category}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Standard Rate ($)</label>
+              <input type="number" step="0.01" id="modalPBPrice" value="${d.unitPrice}" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500 font-mono" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Description</label>
+              <textarea id="modalPBDesc" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500">${d.description || ''}</textarea>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Save Item</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'editNote') {
+        const d = modal.data;
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-red-500"></i> Edit Field Note</h3>
+          <form onsubmit="saveEditWorkOrderNote(event, '${modal.woId}', '${modal.noteId}')" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Note Content</label>
+              <textarea id="modalNoteContent" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required>${d.note}</textarea>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Update Note</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'newCustomer') {
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-red-500"></i> Create New Customer</h3>
+          <form onsubmit="saveNewCustomer(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Company / Customer Name</label>
+              <input type="text" id="modalNewCustName" placeholder="e.g. Apex Commercial Plaza" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Contact Person</label>
+              <input type="text" id="modalNewCustContact" placeholder="e.g. David Sterling" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Phone Number</label>
+              <input type="text" id="modalNewCustPhone" placeholder="(555) 000-0000" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Email Address</label>
+              <input type="email" id="modalNewCustEmail" placeholder="customer@domain.com" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Physical Address</label>
+              <input type="text" id="modalNewCustAddress" placeholder="123 Street Name, City, State" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Create Customer</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      } else if (modal.type === 'newTeamMember') {
+        modalContent = `
+          <h3 class="font-bold text-white text-base mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-red-500"></i> Add Team Member</h3>
+          <form onsubmit="saveNewTeamMember(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Full Name</label>
+              <input type="text" id="modalTeamName" placeholder="e.g. John Doe" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500" required />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Role</label>
+              <select id="modalTeamRole" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:border-red-500">
+                <option value="manager">Manager</option>
+                <option value="csr">CSR</option>
+                <option value="dispatcher">Dispatcher</option>
+                <option value="technician">Technician</option>
+                <option value="parts">Parts</option>
+              </select>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-xs transition">Add Member</button>
+              <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-4 rounded text-xs transition">Cancel</button>
+            </div>
+          </form>
+        `;
+      }
+
+      return `
+        <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 max-w-lg w-full shadow-2xl relative my-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            ${modalContent}
+          </div>
+        </div>
+      `;
+    }
+
+    // Initial App Render Call
     renderApp();
   </script> 
 </body>
